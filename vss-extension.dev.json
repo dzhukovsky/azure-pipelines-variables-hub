@@ -1,0 +1,6 @@
+{
+  "id": "variables-hub-dev",
+  "name": "Variables Hub (Dev)",
+  "baseUri": "http://localhost:3000",
+  "public": false
+}
