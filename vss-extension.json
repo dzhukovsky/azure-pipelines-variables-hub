@@ -3,7 +3,7 @@
   "id": "variables-hub",
   "name": "Variables Hub",
   "manifestVersion": 1,
-  "version": "1.0.1",
+  "version": "1.0.3",
   "publisher": "dzhukovsky",
   "public": false,
   "author": "Dmitry Zhukovsky",
