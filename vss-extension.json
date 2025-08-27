@@ -3,7 +3,7 @@
   "id": "variables-hub",
   "name": "Variables Hub",
   "manifestVersion": 1,
-  "version": "1.0.3",
+  "version": "1.0.31",
   "publisher": "dzhukovsky",
   "public": false,
   "author": "Dmitry Zhukovsky",
@@ -13,11 +13,11 @@
       "id": "Microsoft.VisualStudio.Services"
     }
   ],
-  "demands": ["api-version/3.0"],
+  "demands": ["api-version/7.2"],
   "icons": {
     "default": "icon.png"
   },
-  "scopes": [],
+  "scopes": ["vso.variablegroups_manage"],
   "categories": ["Azure Pipelines"],
   "tags": ["Preview"],
   "content": {

@@ -1,16 +1,16 @@
 import "azure-devops-ui/Core/override.css";
 
-import { StrictMode } from "react";
 import ReactDOM from "react-dom";
-import { PipelinesListingPageExample } from "./App.tsx";
+import { VariablesHub } from "./VariablesHub.tsx";
 import * as SDK from "azure-devops-extension-sdk";
+import { SurfaceBackground, SurfaceContext } from "azure-devops-ui/Surface";
 
 SDK.init();
 
 ReactDOM.render(
-  <StrictMode>
-    <PipelinesListingPageExample />
-  </StrictMode>,
+  <SurfaceContext.Provider value={{ background: SurfaceBackground.neutral }}>
+    <VariablesHub />
+  </SurfaceContext.Provider>,
   document.getElementById("root")
 );
 
