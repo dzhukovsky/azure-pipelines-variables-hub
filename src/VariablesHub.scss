@@ -6,6 +6,15 @@
   left: 0;
 }
 
-.pipelines-page {
+.hub-page {
   height: 100vh;
+}
+
+.text-field-table-wrap {
+  .text-field-container {
+    width: 100%;
+    .text-field {
+      background-color: transparent;
+    }
+  }
 }
