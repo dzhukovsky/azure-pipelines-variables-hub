@@ -11,10 +11,57 @@
 }
 
 .text-field-table-wrap {
+  .bolt-list-row.single-click-activation {
+    cursor: default;
+  }
+
+  .bolt-list-cell {
+    border: none;
+  }
+
+  .bolt-list-row.selected {
+    background-color: rgba(var(--palette-neutral-2), 1);
+
+    .bolt-list-cell:first-child {
+      border-left: none;
+    }
+  }
+
+  .bolt-list-row:hover.selected {
+    background-color: rgba(var(--palette-neutral-2), 1);
+  }
+
   .text-field-container {
     width: 100%;
+
     .text-field {
       background-color: transparent;
+      border: none;
+
+      &.bolt-textfield.focused.focus-treatment {
+        box-shadow: none;
+        border-color: transparent;
+      }
+
+      &:hover:not(.disabled):not(.focused) {
+        background-color: transparent;
+      }
+    }
+
+    .text-field-input {
+      padding-top: 8px;
+      padding-bottom: 8px;
+
+      &.status-deleted {
+        text-decoration: line-through;
+      }
+    }
+
+    .text-field-status {
+      width: 16px;
+      display: inline-block;
+      text-align: right;
+      padding-right: 1px;
     }
   }
 }

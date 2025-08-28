@@ -2,58 +2,28 @@ import "./VariablesHub.scss";
 
 import * as React from "react";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
-import { Ago } from "azure-devops-ui/Ago";
-import { Button } from "azure-devops-ui/Button";
 import { Card } from "azure-devops-ui/Card";
-import { Duration } from "azure-devops-ui/Duration";
 import { Header, TitleSize } from "azure-devops-ui/Header";
 import { IHeaderCommandBarItem } from "azure-devops-ui/HeaderCommandBar";
-import { IIconProps, Icon } from "azure-devops-ui/Icon";
-import { Link } from "azure-devops-ui/Link";
-import { Observer } from "azure-devops-ui/Observer";
 import { Page } from "azure-devops-ui/Page";
 import { Surface, SurfaceBackground } from "azure-devops-ui/Surface";
 import {
   ITableColumn,
-  SimpleTableCell,
-  TableCell,
   Table,
-  TwoLineTableCell,
   ColumnSorting,
   SortOrder,
   sortItems,
-  ITableBreakpoint,
 } from "azure-devops-ui/Table";
-import { ScreenBreakpoints } from "azure-devops-ui/Core/Util/Screen";
 import { Tab, TabBar } from "azure-devops-ui/Tabs";
 import { InlineKeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
-import { Tooltip } from "azure-devops-ui/TooltipEx";
-import { css } from "azure-devops-ui/Util";
 import {
   IFilter,
   Filter,
   FILTER_CHANGE_EVENT,
 } from "azure-devops-ui/Utilities/Filter";
 import { ArrayItemProvider } from "azure-devops-ui/Utilities/Provider";
-import {
-  TextField,
-  TextFieldStyle,
-  TextFieldWidth,
-} from "azure-devops-ui/TextField";
-
-enum PipelineStatus {
-  running = "running",
-  succeeded = "succeeded",
-  failed = "failed",
-  warning = "warning",
-}
-
-enum ReleaseType {
-  prAutomated,
-  tag,
-  scheduled,
-  manual,
-}
+import { ListSelection } from "azure-devops-ui/List";
+import { Status, TextFieldTableCell } from "./components/TextFieldTableCell";
 
 const selectedTabId = new ObservableValue<string>("home");
 const filter = new Filter();
@@ -95,7 +65,7 @@ export class VariablesHub extends React.Component<{}> {
             disableSticky={false}
           >
             <Tab id="home" name="Home" />
-            <Tab id="runs" name="Runs" />
+            <Tab id="custom" name="Custom" />
           </TabBar>
           <div className="page-content page-content-top">
             <PipelinesListingPageContent filter={filter} />
@@ -122,21 +92,28 @@ interface IPipelinesListingPageContentProps {
 
 interface IPipelinesListingPageContentState {
   filtering: boolean;
-  sortedItems: IPipelineItem[];
-  filteredItems: IPipelineItem[];
+  sortedItems: IVariableItem[];
+  filteredItems: IVariableItem[];
 }
 
 class PipelinesListingPageContent extends React.Component<
   IPipelinesListingPageContentProps,
   IPipelinesListingPageContentState
 > {
+  private selection = new ListSelection({
+    selectOnFocus: false,
+    multiSelect: false,
+  });
+
+  private tableRef = React.createRef<Table<Partial<IVariableItem>>>();
+
   constructor(props: IPipelinesListingPageContentProps) {
     super(props);
 
     this.state = {
       filtering: false,
-      filteredItems: [...pipelineItems],
-      sortedItems: [...pipelineItems],
+      filteredItems: [...variableItems],
+      sortedItems: [...variableItems],
     };
   }
 
@@ -149,14 +126,17 @@ class PipelinesListingPageContent extends React.Component<
         className="flex-grow bolt-card-no-vertical-padding"
         contentProps={{ contentPadding: false }}
       >
-        <Table<Partial<IPipelineItem>>
+        <Table<Partial<IVariableItem>>
+          ref={this.tableRef}
           className="text-field-table-wrap"
           behaviors={[this.sortingBehavior]}
           columns={this.columns}
+          selection={this.selection}
+          selectRowOnClick={false}
           itemProvider={
-            new ArrayItemProvider<IPipelineItem>(this.state.filteredItems)
+            new ArrayItemProvider<IVariableItem>(this.state.filteredItems)
           }
-          showLines={true}
+          showLines={false}
           onSelect={(_, data) => console.log("Selected Row - " + data.index)}
           onActivate={(_, row) => console.log("Activated Row - " + row.index)}
         />
@@ -180,20 +160,19 @@ class PipelinesListingPageContent extends React.Component<
     });
   };
 
-  private filterItems = (items: IPipelineItem[]) => {
+  private filterItems = (items: IVariableItem[]) => {
     if (this.props.filter.hasChangesToReset()) {
-      const filterText =
-        this.props.filter.getFilterItemValue<string>("keyword");
-      const statuses =
-        this.props.filter.getFilterItemValue<PipelineStatus[]>("status");
+      const filterText = this.props.filter
+        .getFilterItemValue<string>("keyword")
+        ?.toLocaleLowerCase();
       const filteredItems = items.filter((item) => {
         let includeItem = true;
         if (filterText) {
-          includeItem = item.name.indexOf(filterText) !== -1;
+          includeItem =
+            item.name.value.toLocaleLowerCase().includes(filterText) ||
+            item.value.value.toLocaleLowerCase().includes(filterText);
         }
-        if (includeItem && statuses && statuses.length) {
-          includeItem = statuses.some((s) => s === item.status);
-        }
+
         return includeItem;
       });
       return filteredItems;
@@ -202,15 +181,83 @@ class PipelinesListingPageContent extends React.Component<
     }
   };
 
+  private renderNameColumn = (
+    rowIndex: number,
+    columnIndex: number,
+    tableColumn: ITableColumn<IVariableItem>,
+    tableItem: IVariableItem
+  ) => {
+    return (
+      <TextFieldTableCell
+        key={"col-" + columnIndex}
+        rowIndex={rowIndex}
+        columnIndex={columnIndex}
+        tableColumn={tableColumn}
+        selection={this.selection}
+        value={tableItem.name}
+      />
+    );
+  };
+
+  private renderValueColumn = (
+    rowIndex: number,
+    columnIndex: number,
+    tableColumn: ITableColumn<IVariableItem>,
+    tableItem: IVariableItem
+  ) => {
+    return (
+      <TextFieldTableCell
+        key={"col-" + columnIndex}
+        rowIndex={rowIndex}
+        columnIndex={columnIndex}
+        tableColumn={tableColumn}
+        selection={this.selection}
+        value={tableItem.value}
+        status={tableItem.status}
+      />
+    );
+  };
+
+  private onSize = (_event: MouseEvent, index: number, width: number) => {
+    (this.columns[index].width as ObservableValue<number>).value = width;
+  };
+
+  private columns: ITableColumn<IVariableItem>[] = [
+    {
+      id: "name",
+      name: "Name",
+      onSize: this.onSize,
+      renderCell: this.renderNameColumn,
+      sortProps: {
+        ariaLabelAscending: "Sorted A to Z",
+        ariaLabelDescending: "Sorted Z to A",
+      },
+      width: new ObservableValue(-5),
+    },
+    {
+      id: "value",
+      name: "Value",
+      width: new ObservableValue(-15),
+      renderCell: this.renderValueColumn,
+      sortProps: {
+        ariaLabelAscending: "Sorted A to Z",
+        ariaLabelDescending: "Sorted Z to A",
+      },
+    },
+  ];
+
   private sortFunctions = [
     // Sort on Name column
-    (item1: IPipelineItem, item2: IPipelineItem): number => {
-      return item1.name.localeCompare(item2.name);
+    (item1: IVariableItem, item2: IVariableItem): number => {
+      return item1.name.value.localeCompare(item2.name.value);
+    },
+    (item1: IVariableItem, item2: IVariableItem): number => {
+      return item1.value.value.localeCompare(item2.value.value);
     },
   ];
 
   // Create the sorting behavior (delegate that is called when a column is sorted).
-  private sortingBehavior = new ColumnSorting<IPipelineItem>(
+  private sortingBehavior = new ColumnSorting<IVariableItem>(
     (columnIndex: number, proposedSortOrder: SortOrder) => {
       const sortedItems = sortItems(
         columnIndex,
@@ -225,188 +272,73 @@ class PipelinesListingPageContent extends React.Component<
       });
     }
   );
-
-  private columns: ITableColumn<IPipelineItem>[] = [
-    {
-      id: "name",
-      name: "Name",
-      readonly: true,
-      renderCell: renderNameColumn,
-      sortProps: {
-        ariaLabelAscending: "Sorted A to Z",
-        ariaLabelDescending: "Sorted Z to A",
-      },
-      width: new ObservableValue(-5),
-    },
-    {
-      id: "value",
-      name: "Value",
-      width: new ObservableValue(-15),
-      renderCell: renderValueColumn,
-    },
-  ];
 }
 
-function modifyNow(
-  days: number,
-  hours: number,
-  minutes: number,
-  seconds: number
-): Date {
-  const now = new Date();
-  const newDate = new Date(now as any);
-  newDate.setDate(now.getDate() + days);
-  newDate.setHours(now.getHours() + hours);
-  newDate.setMinutes(now.getMinutes() + minutes);
-  newDate.setSeconds(now.getSeconds() + seconds);
-  return newDate;
-}
+const tempVariables: Record<string, string> = {
+  "Environment.Name": "Production",
+  "Api.BaseUrl": "https://api.example.com/v1/",
+  "Api.ReadTimeoutMs": "15000",
+  "Auth.Authority": "https://login.microsoftonline.com/contoso",
+  "Auth.ClientId": "00000000-0000-0000-0000-000000000000",
+  "Auth.RedirectUri": "https://app.example.com/auth/callback",
+  "Auth.Scopes": "openid profile offline_access api.read",
+  "Http.RetryCount": "3",
+  "Http.RetryBackoffMs": "200,400,800",
+  "Logging.MinimumLevel": "Information",
+  "Logging.Endpoint": "https://ingest.example.com/telemetry",
+  "FeatureFlags.EnableNewVariablesEditor": "true",
+  "FeatureFlags.EnableIntelligentRouting": "false",
+  "UserInterface.Theme": "Dark",
+  "UserInterface.DateTimeFormat": "YYYY-MM-DD HH:mm:ss",
+  "UserInterface.DefaultPageSize": "50",
+  "Cdn.BaseUrl": "https://cdn.example.com/assets/2025/08/",
+  "Cache.DefaultTtlMinutes": "30",
+  "Telemetry.ConnectionString":
+    "InstrumentationKey=00000000-0000-0000-0000-000000000000",
+  "Observability.Otel.Endpoint": "https://otel.example.com/v1/traces",
+  "Storage.Account": "sltpassets",
+  "Storage.Container": "static",
+  "Database.Server": "db-prod-01",
+  "Database.Name": "AppDb",
+  "Region.Primary": "westeurope",
+  "Region.Fallback": "northeurope",
+  "Notifications.DailyDigest": "true",
+  "Email.FromAddress": "no-reply@example.com",
+  "Integrations.GitHub.AppId": "123456",
+  "Integrations.Slack.WebhookUrl":
+    "https://hooks.slack.com/services/T000/B000/XXXX",
+  "Security.Cors.AllowedOrigins":
+    "https://app.example.com;https://admin.example.com",
+  "Security.Csp.DefaultSrc": "'self' https://cdn.example.com",
+};
 
-function renderNameColumn(
-  _rowIndex: number,
-  columnIndex: number,
-  tableColumn: ITableColumn<IPipelineItem>,
-  tableItem: IPipelineItem
-): JSX.Element {
-  return (
-    <SimpleTableCell
-      columnIndex={columnIndex}
-      tableColumn={tableColumn}
-      key={"col-" + columnIndex}
-    >
-      <TextField
-        className="text-field"
-        containerClassName="text-field-container"
-        width={TextFieldWidth.auto}
-        style={TextFieldStyle.inline}
-        value={tableItem.name}
-      ></TextField>
-    </SimpleTableCell>
+const variableItems: IVariableItem[] = [];
+
+for (let i = 0; i < 20; i++) {
+  variableItems.push(
+    ...Object.entries(tempVariables).map(([key, value], ii): IVariableItem => {
+      const status: Status | undefined =
+        ii % (i + 4) === 0
+          ? "Untracked"
+          : ii % (i + 1) === 1
+          ? "Modified"
+          : ii % (i + 2) === 2
+          ? "Deleted"
+          : ii % (i + 3) === 3
+          ? "Error"
+          : undefined;
+
+      return {
+        name: new ObservableValue(`${key}.${i}`),
+        value: new ObservableValue(value),
+        status: status ? new ObservableValue(status) : undefined,
+      };
+    })
   );
 }
 
-function renderValueColumn(
-  _rowIndex: number,
-  columnIndex: number,
-  tableColumn: ITableColumn<IPipelineItem>,
-  tableItem: IPipelineItem
-): JSX.Element {
-  return (
-    <SimpleTableCell
-      columnIndex={columnIndex}
-      tableColumn={tableColumn}
-      key={"col-" + columnIndex}
-    >
-      <TextField
-        className="text-field"
-        containerClassName="text-field-container"
-        width={TextFieldWidth.auto}
-        style={TextFieldStyle.inline}
-        value={tableItem.lastRunData.prName}
-      ></TextField>
-    </SimpleTableCell>
-  );
-}
-
-const tempPipelineItems = [
-  {
-    name: "enterprise-distributed-service",
-    status: PipelineStatus.running,
-    lastRunData: {
-      prId: 482,
-      prName: "Added testing for get_service_instance_stats",
-      startTime: modifyNow(0, -1, 0, 0),
-      endTime: modifyNow(0, -1, 23, 8),
-      releaseType: ReleaseType.prAutomated,
-      branchName: "master",
-    },
-    favorite: new ObservableValue<boolean>(true),
-  },
-  {
-    name: "microservice-architecture",
-    status: PipelineStatus.succeeded,
-    lastRunData: {
-      prId: 137,
-      prName: "Update user service",
-      startTime: modifyNow(-1, 0, 0, 0),
-      endTime: modifyNow(-1, 0, 5, 2),
-      releaseType: ReleaseType.tag,
-      branchName: "master",
-    },
-    favorite: new ObservableValue<boolean>(true),
-  },
-  {
-    name: "mobile-ios-app",
-    status: PipelineStatus.succeeded,
-    lastRunData: {
-      prId: 32,
-      prName: "Update user service",
-      startTime: modifyNow(0, -2, 0, 0),
-      endTime: modifyNow(0, -2, 33, 1),
-      releaseType: ReleaseType.scheduled,
-      branchName: "master",
-    },
-    favorite: new ObservableValue<boolean>(false),
-  },
-  {
-    name: "node-package",
-    status: PipelineStatus.succeeded,
-    lastRunData: {
-      prId: 385,
-      prName: "Add a request body validator",
-      startTime: modifyNow(0, -4, 0, 0),
-      endTime: modifyNow(0, -4, 4, 17),
-      releaseType: ReleaseType.prAutomated,
-      branchName: "test",
-    },
-    favorite: new ObservableValue<boolean>(false),
-  },
-  {
-    name: "parallel-stages",
-    status: PipelineStatus.failed,
-    lastRunData: {
-      prId: 792,
-      prName: "Clean up notifications styling",
-      startTime: modifyNow(0, -6, 0, 0),
-      endTime: modifyNow(0, -6, 2, 8),
-      releaseType: ReleaseType.manual,
-      branchName: "develop",
-    },
-    favorite: new ObservableValue<boolean>(false),
-  },
-  {
-    name: "simple-web-app",
-    status: PipelineStatus.warning,
-    lastRunData: {
-      prId: 283,
-      prName: "Add extra padding on cells",
-      startTime: modifyNow(-2, 0, 0, 0),
-      endTime: modifyNow(-2, 0, 49, 52),
-      releaseType: ReleaseType.prAutomated,
-      branchName: "feature-123",
-    },
-    favorite: new ObservableValue<boolean>(false),
-  },
-];
-
-const pipelineItems: IPipelineItem[] = [];
-
-for (let i = 0; i < 100; i++) {
-  pipelineItems.push(...tempPipelineItems);
-}
-
-interface IPipelineLastRun {
-  startTime?: Date;
-  endTime?: Date;
-  prId: number;
-  prName: string;
-  releaseType: ReleaseType;
-  branchName: string;
-}
-
-interface IPipelineItem {
-  name: string;
-  status: PipelineStatus;
-  lastRunData: IPipelineLastRun;
-  favorite: ObservableValue<boolean>;
+interface IVariableItem {
+  name: ObservableValue<string>;
+  value: ObservableValue<string>;
+  status?: ObservableValue<Status>;
 }

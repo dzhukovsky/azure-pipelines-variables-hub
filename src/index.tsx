@@ -13,5 +13,3 @@ ReactDOM.render(
   </SurfaceContext.Provider>,
   document.getElementById("root")
 );
-
-SDK.notifyLoadSucceeded();
