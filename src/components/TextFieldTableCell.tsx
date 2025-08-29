@@ -9,6 +9,7 @@ import {
 } from "azure-devops-ui/TextField";
 import { IIconProps } from "azure-devops-ui/Icon";
 import { css } from "azure-devops-ui/Util";
+import { Tooltip } from "azure-devops-ui/TooltipEx";
 
 type TextFieldTableCellProps<T> = Omit<
   React.ComponentProps<typeof TableCell<T>>,
@@ -75,14 +76,16 @@ const renderStatus = (status?: Status): IIconProps | undefined => {
   if (status !== "Error") {
     return {
       render: (className) => (
-        <span className={className}>
-          <span
-            className="text-field-status"
-            style={{ color: StatusColor[status] }}
-          >
-            {status.charAt(0)}
+        <Tooltip text={status}>
+          <span className={className}>
+            <span
+              className="text-field-status"
+              style={{ color: StatusColor[status] }}
+            >
+              {status.charAt(0)}
+            </span>
           </span>
-        </span>
+        </Tooltip>
       ),
       tooltipProps: { text: status },
     };

@@ -24,6 +24,13 @@ import {
 import { ArrayItemProvider } from "azure-devops-ui/Utilities/Provider";
 import { ListSelection } from "azure-devops-ui/List";
 import { Status, TextFieldTableCell } from "./components/TextFieldTableCell";
+import { getVariableGroups } from "./services/variableGroupService";
+
+interface IVariableItem {
+  name: ObservableValue<string>;
+  value: ObservableValue<string>;
+  status?: ObservableValue<Status>;
+}
 
 const selectedTabId = new ObservableValue<string>("home");
 const filter = new Filter();
@@ -110,10 +117,25 @@ class PipelinesListingPageContent extends React.Component<
   constructor(props: IPipelinesListingPageContentProps) {
     super(props);
 
+    getVariableGroups().then((vgs) => {
+      var variables = Object.entries(vgs[0].variables).map<IVariableItem>(
+        ([key, value]) => ({
+          name: new ObservableValue(`${key}`),
+          value: new ObservableValue(value.value),
+          status: new ObservableValue("Untracked"),
+        })
+      );
+
+      this.setState({
+        sortedItems: variables,
+        filteredItems: variables,
+      });
+    });
+
     this.state = {
       filtering: false,
-      filteredItems: [...variableItems],
-      sortedItems: [...variableItems],
+      filteredItems: [],
+      sortedItems: [],
     };
   }
 
@@ -272,73 +294,4 @@ class PipelinesListingPageContent extends React.Component<
       });
     }
   );
-}
-
-const tempVariables: Record<string, string> = {
-  "Environment.Name": "Production",
-  "Api.BaseUrl": "https://api.example.com/v1/",
-  "Api.ReadTimeoutMs": "15000",
-  "Auth.Authority": "https://login.microsoftonline.com/contoso",
-  "Auth.ClientId": "00000000-0000-0000-0000-000000000000",
-  "Auth.RedirectUri": "https://app.example.com/auth/callback",
-  "Auth.Scopes": "openid profile offline_access api.read",
-  "Http.RetryCount": "3",
-  "Http.RetryBackoffMs": "200,400,800",
-  "Logging.MinimumLevel": "Information",
-  "Logging.Endpoint": "https://ingest.example.com/telemetry",
-  "FeatureFlags.EnableNewVariablesEditor": "true",
-  "FeatureFlags.EnableIntelligentRouting": "false",
-  "UserInterface.Theme": "Dark",
-  "UserInterface.DateTimeFormat": "YYYY-MM-DD HH:mm:ss",
-  "UserInterface.DefaultPageSize": "50",
-  "Cdn.BaseUrl": "https://cdn.example.com/assets/2025/08/",
-  "Cache.DefaultTtlMinutes": "30",
-  "Telemetry.ConnectionString":
-    "InstrumentationKey=00000000-0000-0000-0000-000000000000",
-  "Observability.Otel.Endpoint": "https://otel.example.com/v1/traces",
-  "Storage.Account": "sltpassets",
-  "Storage.Container": "static",
-  "Database.Server": "db-prod-01",
-  "Database.Name": "AppDb",
-  "Region.Primary": "westeurope",
-  "Region.Fallback": "northeurope",
-  "Notifications.DailyDigest": "true",
-  "Email.FromAddress": "no-reply@example.com",
-  "Integrations.GitHub.AppId": "123456",
-  "Integrations.Slack.WebhookUrl":
-    "https://hooks.slack.com/services/T000/B000/XXXX",
-  "Security.Cors.AllowedOrigins":
-    "https://app.example.com;https://admin.example.com",
-  "Security.Csp.DefaultSrc": "'self' https://cdn.example.com",
-};
-
-const variableItems: IVariableItem[] = [];
-
-for (let i = 0; i < 20; i++) {
-  variableItems.push(
-    ...Object.entries(tempVariables).map(([key, value], ii): IVariableItem => {
-      const status: Status | undefined =
-        ii % (i + 4) === 0
-          ? "Untracked"
-          : ii % (i + 1) === 1
-          ? "Modified"
-          : ii % (i + 2) === 2
-          ? "Deleted"
-          : ii % (i + 3) === 3
-          ? "Error"
-          : undefined;
-
-      return {
-        name: new ObservableValue(`${key}.${i}`),
-        value: new ObservableValue(value),
-        status: status ? new ObservableValue(status) : undefined,
-      };
-    })
-  );
-}
-
-interface IVariableItem {
-  name: ObservableValue<string>;
-  value: ObservableValue<string>;
-  status?: ObservableValue<Status>;
 }
