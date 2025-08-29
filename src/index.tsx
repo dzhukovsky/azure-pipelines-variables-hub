@@ -5,7 +5,7 @@ import { VariablesHub } from "./VariablesHub.tsx";
 import * as SDK from "azure-devops-extension-sdk";
 import { SurfaceBackground, SurfaceContext } from "azure-devops-ui/Surface";
 
-SDK.init();
+SDK.init({ loaded: false });
 
 ReactDOM.render(
   <SurfaceContext.Provider value={{ background: SurfaceBackground.neutral }}>
