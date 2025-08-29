@@ -13,8 +13,8 @@ import {
 } from "azure-devops-ui/Table";
 import { IFilter, FILTER_CHANGE_EVENT } from "azure-devops-ui/Utilities/Filter";
 import { ListSelection } from "azure-devops-ui/List";
-import { Status, TextFieldTableCell } from "./TextFieldTableCell";
 import { useEffect, useMemo, useState } from "react";
+import { Status, TextFieldTableCell } from "./TextFieldTableCell";
 
 export interface IVariableItem {
   name: ObservableValue<string>;
@@ -32,6 +32,27 @@ export interface IVariablesTableState {
   sortedItems: IVariableItem[];
   filteredItems: IVariableItem[];
 }
+
+const filterItems = (items: IVariableItem[], filter: IFilter) => {
+  if (filter.hasChangesToReset()) {
+    const filterText = filter
+      .getFilterItemValue<string>("keyword")
+      ?.toLocaleLowerCase();
+    const filteredItems = items.filter((item) => {
+      let includeItem = true;
+      if (filterText) {
+        includeItem =
+          item.name.value.toLocaleLowerCase().includes(filterText) ||
+          item.value.value.toLocaleLowerCase().includes(filterText);
+      }
+
+      return includeItem;
+    });
+    return filteredItems;
+  } else {
+    return [...items];
+  }
+};
 
 const useColumns = () => {
   const selection = useMemo(
@@ -119,35 +140,16 @@ const useFiltering = (
   variables: IReadonlyObservableArray<IVariableItem>,
   filter: IFilter
 ) => {
-  const [hasItems, setHasItems] = useState<boolean>(variables.value.length > 0);
   const [filteredItems] = useObservableArray<IVariableItem>([
-    ...variables.value,
+    ...filterItems(variables.value, filter),
   ]);
+  const [hasItems, setHasItems] = useState<boolean>(
+    filteredItems.value.length > 0
+  );
 
   useEffect(() => {
-    const filterItems = (items: IVariableItem[]) => {
-      if (filter.hasChangesToReset()) {
-        const filterText = filter
-          .getFilterItemValue<string>("keyword")
-          ?.toLocaleLowerCase();
-        const filteredItems = items.filter((item) => {
-          let includeItem = true;
-          if (filterText) {
-            includeItem =
-              item.name.value.toLocaleLowerCase().includes(filterText) ||
-              item.value.value.toLocaleLowerCase().includes(filterText);
-          }
-
-          return includeItem;
-        });
-        return filteredItems;
-      } else {
-        return [...items];
-      }
-    };
-
     const onFilterChanged = () => {
-      const items = filterItems(variables.value);
+      const items = filterItems(variables.value, filter);
       filteredItems.splice(0, filteredItems.length, ...items);
       setHasItems(items.length > 0);
     };
