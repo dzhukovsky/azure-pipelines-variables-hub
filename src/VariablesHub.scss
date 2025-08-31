@@ -11,23 +11,12 @@
 }
 
 .text-field-table-wrap {
-  .bolt-list-row.single-click-activation {
-    cursor: default;
-  }
-
   .bolt-list-cell {
     border: none;
   }
 
-  .bolt-list-row.selected {
-    background-color: rgba(var(--palette-neutral-2), 1);
-
-    .bolt-list-cell:first-child {
-      border-left: none;
-    }
-  }
-
-  .bolt-list-row:hover.selected {
+  .bolt-tree-row.text-field-row.focused,
+  .bolt-table-row:not(.bolt-tree-row).focused {
     background-color: rgba(var(--palette-neutral-2), 1);
   }
 
@@ -64,4 +53,9 @@
       padding-right: 1px;
     }
   }
+}
+
+.fluent-icons-enabled .ms-Icon--KeyRegular:before {
+  font-family: "AzureDevOpsMDL2Assets";
+  content: "\e8d7";
 }

@@ -1,8 +1,7 @@
-import { ObservableValue } from "azure-devops-ui/Core/Observable";
-import { ListSelection } from "azure-devops-ui/List";
-import { TableCell } from "azure-devops-ui/Table";
+import { IObservableValue } from "azure-devops-ui/Core/Observable";
 import { Observer } from "azure-devops-ui/Observer";
 import {
+  ITextFieldProps,
   TextField,
   TextFieldStyle,
   TextFieldWidth,
@@ -11,54 +10,43 @@ import { IIconProps } from "azure-devops-ui/Icon";
 import { css } from "azure-devops-ui/Util";
 import { Tooltip } from "azure-devops-ui/TooltipEx";
 
-type TextFieldTableCellProps<T> = Omit<
-  React.ComponentProps<typeof TableCell<T>>,
-  "children" | "className" | "ariaRowIndex"
-> & {
-  rowIndex: number;
-  selection?: ListSelection;
-  value: ObservableValue<string>;
-  status?: ObservableValue<Status>;
-};
-
-export const TextFieldTableCell = <T,>({
-  value,
-  selection,
-  rowIndex,
-  status,
-  ...props
-}: TextFieldTableCellProps<T>) => {
+export function renderTextFieldCell(
+  value: IObservableValue<string>,
+  status?: IObservableValue<Status>,
+  iconProps?: IIconProps,
+  textFieldProps?: Pick<
+    ITextFieldProps,
+    "placeholder" | "inputType" | "readOnly"
+  >
+) {
   return (
-    <TableCell {...props} ariaRowIndex={rowIndex}>
-      <Observer status={status}>
-        {(observer) => (
-          <TextField
-            suffixIconProps={renderStatus(observer.status)}
-            className="text-field"
-            inputClassName={css(
-              "text-field-input",
-              observer.status === "Deleted" && "status-deleted"
-            )}
-            disabled={observer.status === "Deleted"}
-            containerClassName="text-field-container"
-            width={TextFieldWidth.auto}
-            style={TextFieldStyle.inline}
-            value={value}
-            onChange={(_, newValue) => {
-              value.value = newValue;
-              if (status) {
-                status.value = "Modified";
-              }
-            }}
-            onFocus={() => {
-              selection?.select(rowIndex);
-            }}
-          ></TextField>
-        )}
-      </Observer>
-    </TableCell>
+    <Observer status={status}>
+      {(observer) => (
+        <TextField
+          {...textFieldProps}
+          prefixIconProps={iconProps}
+          suffixIconProps={renderStatus(observer.status)}
+          className="text-field"
+          inputClassName={css(
+            "text-field-input",
+            observer.status === "Deleted" && "status-deleted"
+          )}
+          disabled={observer.status === "Deleted"}
+          containerClassName="text-field-container"
+          width={TextFieldWidth.auto}
+          style={TextFieldStyle.inline}
+          value={value}
+          onChange={(_, newValue) => {
+            value.value = newValue;
+            if (status) {
+              status.value = "Modified";
+            }
+          }}
+        ></TextField>
+      )}
+    </Observer>
   );
-};
+}
 
 export type Status = "Untracked" | "Modified" | "Deleted" | "Error";
 const StatusColor: Record<Status, string> = {

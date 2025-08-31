@@ -1,103 +1,60 @@
 import {
   IReadonlyObservableArray,
   ObservableValue,
-  useObservableArray,
 } from "azure-devops-ui/Core/Observable";
 import { Card } from "azure-devops-ui/Card";
-import {
-  ITableColumn,
-  Table,
-  ColumnSorting,
-  SortOrder,
-  sortItems,
-} from "azure-devops-ui/Table";
-import { IFilter, FILTER_CHANGE_EVENT } from "azure-devops-ui/Utilities/Filter";
-import { ListSelection } from "azure-devops-ui/List";
-import { useEffect, useMemo, useState } from "react";
-import { Status, TextFieldTableCell } from "./TextFieldTableCell";
+import { ITableColumn, Table, TableCell } from "azure-devops-ui/Table";
+import { useMemo } from "react";
+import { renderTextFieldCell, Status } from "./TextFieldTableCell";
+import { IFilter } from "azure-devops-ui/Utilities/Filter";
+import { FilterFunc, useFiltering } from "../hooks/filtering";
+import { SortFunc, useSorting } from "../hooks/sorting";
 
 export interface IVariableItem {
   name: ObservableValue<string>;
   value: ObservableValue<string>;
   status?: ObservableValue<Status>;
+  groupName: string;
+  isSecret: boolean;
 }
 
 export interface IVariablesTableProps {
-  filter: IFilter;
   variables: IReadonlyObservableArray<IVariableItem>;
+  filter: IFilter;
+  filterFunc: FilterFunc<IVariableItem>;
+  sortFunctions: SortFunc<IVariableItem>[];
 }
-
-export interface IVariablesTableState {
-  filtering: boolean;
-  sortedItems: IVariableItem[];
-  filteredItems: IVariableItem[];
-}
-
-const filterItems = (items: IVariableItem[], filter: IFilter) => {
-  if (filter.hasChangesToReset()) {
-    const filterText = filter
-      .getFilterItemValue<string>("keyword")
-      ?.toLocaleLowerCase();
-    const filteredItems = items.filter((item) => {
-      let includeItem = true;
-      if (filterText) {
-        includeItem =
-          item.name.value.toLocaleLowerCase().includes(filterText) ||
-          item.value.value.toLocaleLowerCase().includes(filterText);
-      }
-
-      return includeItem;
-    });
-    return filteredItems;
-  } else {
-    return [...items];
-  }
-};
 
 const useColumns = () => {
-  const selection = useMemo(
-    () =>
-      new ListSelection({
-        selectOnFocus: false,
-        multiSelect: false,
-      }),
-    []
-  );
-
   const columns = useMemo<ITableColumn<IVariableItem>[]>(() => {
     const renderNameColumn = (
-      rowIndex: number,
+      _rowIndex: number,
       columnIndex: number,
       tableColumn: ITableColumn<IVariableItem>,
       tableItem: IVariableItem
     ) => {
       return (
-        <TextFieldTableCell
+        <TableCell
           key={"col-" + columnIndex}
-          rowIndex={rowIndex}
           columnIndex={columnIndex}
           tableColumn={tableColumn}
-          selection={selection}
-          value={tableItem.name}
+          children={renderTextFieldCell(tableItem.name)}
         />
       );
     };
 
     const renderValueColumn = (
-      rowIndex: number,
+      _rowIndex: number,
       columnIndex: number,
       tableColumn: ITableColumn<IVariableItem>,
       tableItem: IVariableItem
     ) => {
       return (
-        <TextFieldTableCell
+        <TableCell
           key={"col-" + columnIndex}
-          rowIndex={rowIndex}
           columnIndex={columnIndex}
           tableColumn={tableColumn}
-          selection={selection}
-          value={tableItem.value}
-          status={tableItem.status}
+          children={renderTextFieldCell(tableItem.value, tableItem.status)}
         />
       );
     };
@@ -131,92 +88,30 @@ const useColumns = () => {
     ];
 
     return columns;
-  }, [selection]);
+  }, []);
 
-  return { columns, selection };
+  return columns;
 };
 
-const useFiltering = (
-  variables: IReadonlyObservableArray<IVariableItem>,
-  filter: IFilter
-) => {
-  const [filteredItems] = useObservableArray<IVariableItem>([
-    ...filterItems(variables.value, filter),
-  ]);
-  const [hasItems, setHasItems] = useState<boolean>(
-    filteredItems.value.length > 0
+export const VariablesTable = ({
+  variables,
+  filter,
+  filterFunc,
+  sortFunctions,
+}: IVariablesTableProps) => {
+  const columns = useColumns();
+
+  const { sortedItems, sortingBehavior } = useSorting(
+    columns,
+    variables,
+    sortFunctions
   );
 
-  useEffect(() => {
-    const onFilterChanged = () => {
-      const items = filterItems(variables.value, filter);
-      filteredItems.splice(0, filteredItems.length, ...items);
-      setHasItems(items.length > 0);
-    };
-
-    filter.subscribe(onFilterChanged, FILTER_CHANGE_EVENT);
-    variables.subscribe(onFilterChanged);
-    return () => {
-      filter.unsubscribe(onFilterChanged, FILTER_CHANGE_EVENT);
-      variables.unsubscribe(onFilterChanged);
-    };
-  }, [filter, filteredItems, variables]);
-
-  return { filteredItems, hasItems };
-};
-
-const useSorting = (
-  columns: ITableColumn<IVariableItem>[],
-  variables: IReadonlyObservableArray<IVariableItem>
-) => {
-  const [sortedItems] = useObservableArray<IVariableItem>([...variables.value]);
-
-  useEffect(() => {
-    const onVariablesChanged = () => {
-      sortedItems.splice(0, sortedItems.length, ...variables.value);
-    };
-
-    variables.subscribe(onVariablesChanged);
-    return () => variables.unsubscribe(onVariablesChanged);
-  }, [variables, sortedItems]);
-
-  const sortFunctions = useMemo(
-    () => [
-      (item1: IVariableItem, item2: IVariableItem): number => {
-        return item1.name.value.localeCompare(item2.name.value);
-      },
-      (item1: IVariableItem, item2: IVariableItem): number => {
-        return item1.value.value.localeCompare(item2.value.value);
-      },
-    ],
-    []
+  const { filteredItems, hasItems } = useFiltering(
+    sortedItems,
+    filter,
+    filterFunc
   );
-
-  const sortingBehavior = useMemo(
-    () =>
-      new ColumnSorting<IVariableItem>(
-        (columnIndex: number, proposedSortOrder: SortOrder) => {
-          const items = sortItems(
-            columnIndex,
-            proposedSortOrder,
-            sortFunctions,
-            columns,
-            sortedItems.value
-          );
-
-          sortedItems.splice(0, sortedItems.length, ...items);
-        }
-      ),
-    [sortFunctions, columns, sortedItems]
-  );
-
-  return { sortedItems, sortingBehavior };
-};
-
-export const VariablesTable = ({ variables, filter }: IVariablesTableProps) => {
-  const { columns, selection } = useColumns();
-  const { filteredItems, hasItems } = useFiltering(variables, filter);
-  const { sortedItems, sortingBehavior } = useSorting(columns, filteredItems);
 
   return (
     (hasItems && (
@@ -225,15 +120,12 @@ export const VariablesTable = ({ variables, filter }: IVariablesTableProps) => {
         contentProps={{ contentPadding: false }}
       >
         <Table<Partial<IVariableItem>>
-          className="text-field-table-wrap"
+          className="text-field-table-wrap focusable-text-field-rows"
           behaviors={[sortingBehavior]}
           columns={columns}
-          selection={selection}
           selectRowOnClick={false}
-          itemProvider={sortedItems}
+          itemProvider={filteredItems}
           showLines={false}
-          onSelect={(_, data) => console.log("Selected Row - " + data.index)}
-          onActivate={(_, row) => console.log("Activated Row - " + row.index)}
         />
       </Card>
     )) || <>No items found</>
