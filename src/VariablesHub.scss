@@ -35,6 +35,10 @@
       &:hover:not(.disabled):not(.focused) {
         background-color: transparent;
       }
+
+      input {
+        min-width: 0;
+      }
     }
 
     .text-field-input {
@@ -58,4 +62,8 @@
 .fluent-icons-enabled .ms-Icon--KeyRegular:before {
   font-family: "AzureDevOpsMDL2Assets";
   content: "\e8d7";
+}
+
+.input-validation-error {
+  color: var(--status-error-foreground);
 }

@@ -21,13 +21,19 @@ import {
 } from "azure-devops-ui/Utilities/TreeItemProvider";
 import { IVariableItem } from "./VariablesTable";
 import { FilterFunc } from "../hooks/filtering";
-import { KeyRegular, LibraryFilled } from "@fluentui/react-icons/fonts";
+import {
+  DocumentKeyRegular,
+  KeyRegular,
+  LibraryFilled,
+} from "@fluentui/react-icons/fonts";
 import { renderTextFieldCell, Status } from "./TextFieldTableCell";
 import { css } from "azure-devops-ui/Util";
 import { TableCell } from "azure-devops-ui/Table";
+import { SecureFile } from "azure-devops-extension-api/TaskAgent";
 
 export interface IVariablesTreeProps {
   variables: IReadonlyObservableArray<IVariableItem>;
+  secureFiles: IReadonlyObservableArray<SecureFile>;
   filter: IFilter;
   filterFunc: FilterFunc<IVariableItem>;
 }
@@ -44,6 +50,11 @@ type VariableTableItem =
       isSecret: boolean;
       status?: IObservableValue<Status>;
       type: "variable";
+    }
+  | {
+      name: string;
+      status?: IObservableValue<Status>;
+      type: "file";
     };
 
 const useColumns = () => {
@@ -66,37 +77,48 @@ const useColumns = () => {
               key={"col-" + columnIndex}
               contentClassName={css(data.type === "variable" && "padding-0")}
               children={
-                data.type === "group"
-                  ? renderListCell({
-                      text: data.name,
-                      iconProps: {
-                        render: (className) => (
-                          <LibraryFilled
-                            className={className}
-                            style={{
-                              color: "var(--icon-folder-color, #dcb67a)",
-                            }}
-                          />
-                        ),
-                      },
-                    })
-                  : renderTextFieldCell(
-                      data.name,
-                      undefined,
-                      {
-                        render: data.isSecret
-                          ? (className) => (
-                              <KeyRegular
-                                className={className}
-                                style={{ paddingLeft: "2px", marginLeft: "0" }}
-                              />
-                            )
-                          : undefined,
-                        iconName: data.isSecret ? undefined : "Variable",
-                        style: { paddingLeft: "0", marginLeft: "0" },
-                      },
-                      { readOnly: data.isSecret }
-                    )
+                (data.type === "group" &&
+                  renderListCell({
+                    text: data.name,
+                    iconProps: {
+                      render: (className) => (
+                        <LibraryFilled
+                          className={className}
+                          style={{
+                            color: "var(--icon-folder-color, #dcb67a)",
+                          }}
+                        />
+                      ),
+                    },
+                  })) ||
+                (data.type === "variable" &&
+                  renderTextFieldCell(
+                    data.name,
+                    undefined,
+                    {
+                      render: data.isSecret
+                        ? (className) => (
+                            <KeyRegular
+                              className={className}
+                              style={{ paddingLeft: "2px", marginLeft: "0" }}
+                            />
+                          )
+                        : undefined,
+                      iconName: data.isSecret ? undefined : "Variable",
+                      style: { paddingLeft: "0", marginLeft: "0" },
+                    },
+                    { readOnly: data.isSecret }
+                  )) ||
+                (data.type === "file" &&
+                  renderListCell({
+                    text: data.name,
+                    iconProps: {
+                      render: (className) => (
+                        <DocumentKeyRegular className={className} />
+                      ),
+                    },
+                  })) ||
+                undefined
               }
               className={treeColumn.className}
               columnIndex={columnIndex}
@@ -145,7 +167,10 @@ const useColumns = () => {
   return { columns, renderRow };
 };
 
-const getItemProvider = (variables: IVariableItem[]) => {
+const getItemProvider = (
+  variables: IVariableItem[],
+  secureFiles: SecureFile[]
+) => {
   const groupedVariables = variables.reduce<Record<string, IVariableItem[]>>(
     (acc, variable) => {
       const group = acc[variable.groupName] || [];
@@ -156,54 +181,74 @@ const getItemProvider = (variables: IVariableItem[]) => {
     {}
   );
 
-  const rootItems = Object.entries(groupedVariables).map<
-    ITreeItem<VariableTableItem>
-  >(([groupName, variables]) => ({
-    data: {
-      name: groupName,
-      type: "group",
-    },
-    childItems: variables.map<ITreeItem<VariableTableItem>>((variable) => ({
+  const rootItems = [
+    ...Object.entries(groupedVariables).map<ITreeItem<VariableTableItem>>(
+      ([groupName, variables]) => ({
+        data: {
+          name: groupName,
+          type: "group",
+        },
+        childItems: variables.map<ITreeItem<VariableTableItem>>((variable) => ({
+          data: {
+            name: variable.name,
+            value: variable.value,
+            isSecret: variable.isSecret,
+            status: variable.status,
+            type: "variable",
+          },
+        })),
+        expanded: false,
+      })
+    ),
+    ...secureFiles.map<ITreeItem<VariableTableItem>>((file) => ({
       data: {
-        name: variable.name,
-        value: variable.value,
-        isSecret: variable.isSecret,
-        status: variable.status,
-        type: "variable",
+        name: file.name,
+        type: "file",
       },
     })),
-    expanded: false,
-  }));
+  ];
 
   return rootItems;
 };
 
-const useTreeData = (variables: IReadonlyObservableArray<IVariableItem>) => {
+const useTreeData = (
+  variables: IReadonlyObservableArray<IVariableItem>,
+  secureFiles: IReadonlyObservableArray<SecureFile>
+) => {
   const itemProvider = useMemo(
     () =>
-      new TreeItemProvider<VariableTableItem>(getItemProvider(variables.value)),
-    [variables]
+      new TreeItemProvider<VariableTableItem>(
+        getItemProvider(variables.value, secureFiles.value)
+      ),
+    [variables, secureFiles]
   );
 
   useEffect(() => {
     const onVariablesChanged = () => {
-      itemProvider.splice(undefined, undefined, [
+      itemProvider.splice(undefined, itemProvider.roots, [
         {
-          items: getItemProvider(variables.value),
+          items: getItemProvider(variables.value, secureFiles.value),
         },
       ]);
     };
 
     variables.subscribe(onVariablesChanged);
-    return () => variables.unsubscribe(onVariablesChanged);
-  }, [variables, itemProvider]);
+    secureFiles.subscribe(onVariablesChanged);
+    return () => {
+      variables.unsubscribe(onVariablesChanged);
+      secureFiles.unsubscribe(onVariablesChanged);
+    };
+  }, [variables, itemProvider, secureFiles]);
 
   return { itemProvider };
 };
 
-export const VariablesTree = ({ variables }: IVariablesTreeProps) => {
+export const VariablesTree = ({
+  variables,
+  secureFiles,
+}: IVariablesTreeProps) => {
   const { columns, renderRow } = useColumns();
-  const { itemProvider } = useTreeData(variables);
+  const { itemProvider } = useTreeData(variables, secureFiles);
 
   return (
     <Card
@@ -213,7 +258,6 @@ export const VariablesTree = ({ variables }: IVariablesTreeProps) => {
       <Tree<VariableTableItem>
         className="text-field-table-wrap"
         columns={columns}
-        // selection={selection}
         itemProvider={itemProvider}
         showLines={false}
         renderRow={renderRow}

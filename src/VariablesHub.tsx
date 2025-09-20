@@ -14,21 +14,63 @@ import { Tab, TabBar } from "azure-devops-ui/Tabs";
 import { InlineKeywordFilterBarItem } from "azure-devops-ui/TextFilterBarItem";
 import { Filter } from "azure-devops-ui/Utilities/Filter";
 import { IVariableItem, VariablesTable } from "./components/VariablesTable";
-import { getVariableGroups } from "./services/variableGroupService";
+import {
+  getSecureFiles,
+  getVariableGroups,
+} from "./services/variableGroupService";
 import { useCallback, useEffect, useState } from "react";
 import * as SDK from "azure-devops-extension-sdk";
 import { VariablesTree } from "./components/VariablesTree";
 import { SortFunc } from "./hooks/sorting";
+import { SplitButton } from "azure-devops-ui/SplitButton";
+import { VariablesMatrix } from "./components/VariablesMatrix";
+import {
+  SecureFile,
+  VariableGroup,
+} from "azure-devops-extension-api/TaskAgent";
+import { StatusTypes } from "./components/TextFieldTableCell";
 
 const headerCommands: IHeaderCommandBarItem[] = [
   {
     id: "new-variable-group",
-    text: "New variable group",
-    onActivate: () => {
-      alert("New variable group");
-    },
-    isPrimary: true,
     important: true,
+    renderButton: ({ id }) => (
+      <SplitButton
+        key={id}
+        primary={true}
+        buttonProps={{
+          text: "New variable group",
+          onClick: () => {
+            alert("New variable group");
+          },
+        }}
+        menuButtonProps={{
+          ariaLabel: "See options",
+          contextualMenuProps: {
+            menuProps: {
+              id: "2",
+              items: [
+                {
+                  id: "new-secure-file",
+                  text: "New secure file",
+                  onActivate: () => {
+                    alert("New secure file");
+                  },
+                },
+              ],
+            },
+          },
+        }}
+      />
+    ),
+  },
+  {
+    id: "history",
+    text: "History",
+    onActivate: () => {
+      alert("History");
+    },
+    important: false,
   },
   {
     id: "manage-views",
@@ -57,29 +99,41 @@ const sortFunctions: SortFunc<IVariableItem>[] = [
   (a, b) => (a.value.value ?? "").localeCompare(b.value.value ?? ""),
 ];
 
+const loadData = async () => {
+  const variableGroups = await getVariableGroups();
+  const secureFiles = await getSecureFiles();
+  return { variableGroups, secureFiles };
+};
+
 export const VariablesHub = () => {
   const [filter] = useState<Filter>(new Filter());
   const [selectedTabId] = useObservable<string>("home");
+  const [variableGroups, setVariableGroups] = useState<VariableGroup[]>([]);
   const [variables] = useObservableArray<IVariableItem>([]);
+  const [secureFilesData] = useObservableArray<SecureFile>([]);
 
   useEffect(() => {
-    getVariableGroups().then((vgs) => {
-      const items = vgs
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .flatMap((vg) =>
-          Object.entries(vg.variables).map<IVariableItem>(([key, value]) => ({
-            name: new ObservableValue(`${key}`),
-            value: new ObservableValue(value.value),
-            status: new ObservableValue("Untracked"),
-            groupName: vg.name,
-            isSecret: value.isSecret,
-          }))
-        );
+    loadData()
+      .then(({ variableGroups, secureFiles }) => {
+        setVariableGroups(variableGroups);
+        const items = variableGroups
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .flatMap((vg) =>
+            Object.entries(vg.variables).map<IVariableItem>(([key, value]) => ({
+              name: new ObservableValue(`${key}`),
+              value: new ObservableValue(value.value),
+              status: new ObservableValue(StatusTypes.Untracked),
+              groupName: vg.name,
+              isSecret: value.isSecret,
+            }))
+          );
 
-      variables.splice(0, variables.length, ...items);
-      SDK.notifyLoadSucceeded();
-    });
-  }, [variables]);
+        variables.splice(0, variables.length, ...items);
+        secureFilesData.splice(0, secureFilesData.length, ...secureFiles);
+        SDK.notifyLoadSucceeded();
+      })
+      .catch(console.error);
+  }, [variables, secureFilesData]);
 
   const onSelectedTabChanged = useCallback(
     (newTabId: string) => {
@@ -109,7 +163,8 @@ export const VariablesHub = () => {
           disableSticky={false}
         >
           <Tab id="home" name="Home" />
-          <Tab id="custom" name="Custom" />
+          <Tab id="table" name="Table" />
+          <Tab id="matrix" name="Matrix" />
         </TabBar>
         <div className="page-content page-content-top">
           <Observer selectedTabId={selectedTabId}>
@@ -118,15 +173,22 @@ export const VariablesHub = () => {
                 <VariablesTree
                   variables={variables}
                   filter={filter}
+                  secureFiles={secureFilesData}
                   filterFunc={filterFunc}
                 />
               )) ||
-              (selectedTabId === "custom" && (
+              (selectedTabId === "table" && (
                 <VariablesTable
                   variables={variables}
                   filter={filter}
                   filterFunc={filterFunc}
                   sortFunctions={sortFunctions}
+                />
+              )) ||
+              (selectedTabId === "matrix" && (
+                <VariablesMatrix
+                  variableGroups={variableGroups}
+                  filter={filter}
                 />
               ))
             }

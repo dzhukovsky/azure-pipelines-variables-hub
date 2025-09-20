@@ -11,3 +11,13 @@ export const getVariableGroups = async () => {
 
   return variableGroups;
 };
+
+export const getSecureFiles = async () => {
+  await SDK.ready();
+
+  const project = SDK.getWebContext().project;
+  const client = getClient(TaskAgentRestClient);
+  const secureFiles = await client.getSecureFiles(project.id);
+
+  return secureFiles;
+};

@@ -12,35 +12,47 @@ import { Tooltip } from "azure-devops-ui/TooltipEx";
 
 export function renderTextFieldCell(
   value: IObservableValue<string>,
-  status?: IObservableValue<Status>,
+  status?: IObservableValue<Status | undefined>,
   iconProps?: IIconProps,
   textFieldProps?: Pick<
     ITextFieldProps,
-    "placeholder" | "inputType" | "readOnly"
-  >
+    "placeholder" | "inputType" | "readOnly" | "required"
+  >,
+  onChange?: (newValue: string) => void
 ) {
+  const placeholder =
+    textFieldProps?.placeholder ||
+    (textFieldProps?.inputType === "password" && "******") ||
+    undefined;
+
   return (
     <Observer status={status}>
-      {(observer) => (
+      {({ status }) => (
         <TextField
           {...textFieldProps}
+          spellCheck={false}
+          placeholder={placeholder}
+          tooltipProps={{
+            disabled: textFieldProps?.inputType === "password",
+            overflowOnly: true,
+            renderContent: () => value.value,
+          }}
           prefixIconProps={iconProps}
-          suffixIconProps={renderStatus(observer.status)}
+          suffixIconProps={renderStatus(status)}
           className="text-field"
           inputClassName={css(
-            "text-field-input",
-            observer.status === "Deleted" && "status-deleted"
+            "text-ellipsis text-field-input",
+            status?.type === "Deleted" && "status-deleted",
+            status?.type === "Error" && "input-validation-error"
           )}
-          disabled={observer.status === "Deleted"}
+          disabled={status?.type === "Deleted"}
           containerClassName="text-field-container"
           width={TextFieldWidth.auto}
           style={TextFieldStyle.inline}
           value={value}
           onChange={(_, newValue) => {
             value.value = newValue;
-            if (status) {
-              status.value = "Modified";
-            }
+            onChange?.(newValue);
           }}
         ></TextField>
       )}
@@ -48,8 +60,13 @@ export function renderTextFieldCell(
   );
 }
 
-export type Status = "Untracked" | "Modified" | "Deleted" | "Error";
-const StatusColor: Record<Status, string> = {
+export type Status =
+  | { type: "Untracked" | "Modified" | "Deleted" }
+  | {
+      type: "Error";
+      message: string;
+    };
+const StatusColor: Record<Status["type"], string> = {
   Untracked: "var(--status-success-foreground)",
   Modified: "var(--status-warning-foreground)",
   Deleted: "var(--status-error-foreground)",
@@ -61,27 +78,33 @@ const renderStatus = (status?: Status): IIconProps | undefined => {
     return undefined;
   }
 
-  if (status !== "Error") {
+  if (status.type !== "Error") {
     return {
       render: (className) => (
-        <Tooltip text={status}>
+        <Tooltip text={status.type}>
           <span className={className}>
             <span
               className="text-field-status"
-              style={{ color: StatusColor[status] }}
+              style={{ color: StatusColor[status.type] }}
             >
-              {status.charAt(0)}
+              {status.type.charAt(0)}
             </span>
           </span>
         </Tooltip>
       ),
-      tooltipProps: { text: status },
     };
   }
 
   return {
     iconName: "Error",
-    style: { color: StatusColor[status] },
-    tooltipProps: { text: "Error message" },
+    style: { color: StatusColor[status.type] },
+    tooltipProps: { text: status.message },
   };
+};
+
+export const StatusTypes: Record<Status["type"], Status> = {
+  Untracked: { type: "Untracked" },
+  Modified: { type: "Modified" },
+  Deleted: { type: "Deleted" },
+  Error: { type: "Error", message: "Unknown error" },
 };
