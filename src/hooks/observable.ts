@@ -1,7 +1,6 @@
 import "azure-devops-ui/Core/Observable";
 import {
   IObservableArray,
-  IObservableValue,
   IReadonlyObservableArray,
   IReadonlyObservableValue,
   useObservable,

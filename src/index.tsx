@@ -4,12 +4,24 @@ import ReactDOM from "react-dom";
 import { VariablesHub } from "./VariablesHub.tsx";
 import * as SDK from "azure-devops-extension-sdk";
 import { SurfaceBackground, SurfaceContext } from "azure-devops-ui/Surface";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-SDK.init({ loaded: false });
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
+  },
+});
+
+SDK.init();
 
 ReactDOM.render(
   <SurfaceContext.Provider value={{ background: SurfaceBackground.neutral }}>
-    <VariablesHub />
+    <QueryClientProvider client={queryClient}>
+      <VariablesHub />
+    </QueryClientProvider>
   </SurfaceContext.Provider>,
   document.getElementById("root")
 );
