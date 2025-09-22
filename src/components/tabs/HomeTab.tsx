@@ -1,9 +1,4 @@
-import {
-  getSecureFiles,
-  getVariableGroups,
-} from "../../services/variableGroupService";
 import { LibraryItem, VariablesTree } from "../VariablesTree";
-import { useQuery } from "@tanstack/react-query";
 import {
   SecureFile,
   VariableGroup,
@@ -15,24 +10,19 @@ import {
 } from "azure-devops-ui/Utilities/TreeItemProvider";
 import { ObservableValue } from "azure-devops-ui/Core/Observable";
 import { StatusTypes } from "../TextFieldTableCell";
+import { useVariableGroups } from "@/hooks/query/variableGroups";
+import { useSecureFiles } from "@/hooks/query/secureFiles";
 
-const loadData = async () => {
-  const variableGroups = await getVariableGroups();
-  const secureFiles = await getSecureFiles();
-  return { variableGroups, secureFiles };
-};
 export const HomeTab = () => {
-  console.log("Rendering HomeTab");
+  const groups = useVariableGroups();
+  const files = useSecureFiles();
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["home-tab/variable-groups-and-secure-files"],
-    queryFn: loadData,
-    initialData: { variableGroups: [], secureFiles: [] },
-  });
+  const isLoading = groups.isLoading || files.isLoading;
+  const error = groups.error || files.error;
 
   const itemProvider = useMemo(
-    () => getItemProvider(data.variableGroups, data.secureFiles),
-    [data]
+    () => getItemProvider(groups.data, files.data),
+    [groups.data, files.data]
   );
 
   if (isLoading) {
@@ -77,6 +67,5 @@ const getItemProvider = (
     })),
   ];
 
-  console.log("getItemProvider", rootItems);
   return new TreeItemProvider<LibraryItem>(rootItems);
 };

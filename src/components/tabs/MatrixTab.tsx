@@ -1,5 +1,4 @@
-import { getVariableGroups } from "../../services/variableGroupService";
-import { useQuery } from "@tanstack/react-query";
+import { useVariableGroups } from "@/hooks/query/variableGroups";
 import { VariablesMatrix } from "../VariablesMatrix";
 import { IFilter } from "azure-devops-ui/Utilities/Filter";
 
@@ -8,11 +7,7 @@ export type MatrixTabProps = {
 };
 
 export const MatrixTab = ({ filter }: MatrixTabProps) => {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["matrix-tab/variable-groups"],
-    queryFn: getVariableGroups,
-    initialData: [],
-  });
+  const { data, isLoading, error } = useVariableGroups();
 
   if (isLoading) {
     return <div>Loading...</div>;

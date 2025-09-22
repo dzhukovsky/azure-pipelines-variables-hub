@@ -1,5 +1,3 @@
-import { getVariableGroups } from "../../services/variableGroupService";
-import { useQuery } from "@tanstack/react-query";
 import { VariableGroup } from "azure-devops-extension-api/TaskAgent";
 import { useMemo } from "react";
 import {
@@ -10,6 +8,7 @@ import { StatusTypes } from "../TextFieldTableCell";
 import { IVariableItem, VariablesTable } from "../VariablesTable";
 import { IFilter } from "azure-devops-ui/Utilities/Filter";
 import { SortFunc } from "src/hooks/sorting";
+import { useVariableGroups } from "@/hooks/query/variableGroups";
 
 const filterFunc = (item: IVariableItem, text: string) => {
   let includeItem = true;
@@ -33,11 +32,7 @@ export type TableTabProps = {
 };
 
 export const TableTab = ({ filter }: TableTabProps) => {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["table-tab/variable-groups"],
-    queryFn: getVariableGroups,
-    initialData: [],
-  });
+  const { data, isLoading, error } = useVariableGroups();
 
   const variables = useMemo(() => getVariables(data), [data]);
 
