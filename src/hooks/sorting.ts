@@ -1,19 +1,19 @@
-import { IReadonlyObservableArray } from "azure-devops-ui/Core/Observable";
+import type { IReadonlyObservableArray } from 'azure-devops-ui/Core/Observable';
 import {
   ColumnSorting,
-  ITableColumn,
+  type ITableColumn,
+  type SortOrder,
   sortItems,
-  SortOrder,
-} from "azure-devops-ui/Table";
-import { useMemo } from "react";
-import { useDerivedObservableArray } from "./observable";
+} from 'azure-devops-ui/Table';
+import { useMemo } from 'react';
+import { useDerivedObservableArray } from './observable';
 
 export type SortFunc<T> = (a: T, b: T) => number;
 
 export function useSorting<T>(
   columns: ITableColumn<T>[],
   items: IReadonlyObservableArray<T>,
-  sortFunctions: SortFunc<T>[]
+  sortFunctions: SortFunc<T>[],
 ) {
   const sortedItems = useDerivedObservableArray(items);
 
@@ -26,13 +26,13 @@ export function useSorting<T>(
             proposedSortOrder,
             sortFunctions,
             columns,
-            sortedItems.value
+            sortedItems.value,
           );
 
           sortedItems.splice(0, sortedItems.length, ...items);
-        }
+        },
       ),
-    [sortFunctions, columns, sortedItems]
+    [sortFunctions, columns, sortedItems],
   );
 
   return { sortedItems, sortingBehavior };

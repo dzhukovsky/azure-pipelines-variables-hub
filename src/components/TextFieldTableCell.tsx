@@ -1,14 +1,14 @@
-import { IObservableValue } from "azure-devops-ui/Core/Observable";
-import { Observer } from "azure-devops-ui/Observer";
+import type { IObservableValue } from 'azure-devops-ui/Core/Observable';
+import type { IIconProps } from 'azure-devops-ui/Icon';
+import { Observer } from 'azure-devops-ui/Observer';
 import {
-  ITextFieldProps,
+  type ITextFieldProps,
   TextField,
   TextFieldStyle,
   TextFieldWidth,
-} from "azure-devops-ui/TextField";
-import { IIconProps } from "azure-devops-ui/Icon";
-import { css } from "azure-devops-ui/Util";
-import { Tooltip } from "azure-devops-ui/TooltipEx";
+} from 'azure-devops-ui/TextField';
+import { Tooltip } from 'azure-devops-ui/TooltipEx';
+import { css } from 'azure-devops-ui/Util';
 
 export function renderTextFieldCell(
   value: IObservableValue<string>,
@@ -16,13 +16,13 @@ export function renderTextFieldCell(
   iconProps?: IIconProps,
   textFieldProps?: Pick<
     ITextFieldProps,
-    "placeholder" | "inputType" | "readOnly" | "required"
+    'placeholder' | 'inputType' | 'readOnly' | 'required'
   >,
-  onChange?: (newValue: string) => void
+  onChange?: (newValue: string) => void,
 ) {
   const placeholder =
     textFieldProps?.placeholder ||
-    (textFieldProps?.inputType === "password" && "******") ||
+    (textFieldProps?.inputType === 'password' && '******') ||
     undefined;
 
   return (
@@ -33,7 +33,7 @@ export function renderTextFieldCell(
           spellCheck={false}
           placeholder={placeholder}
           tooltipProps={{
-            disabled: textFieldProps?.inputType === "password",
+            disabled: textFieldProps?.inputType === 'password',
             overflowOnly: true,
             renderContent: () => value.value,
           }}
@@ -41,11 +41,11 @@ export function renderTextFieldCell(
           suffixIconProps={renderStatus(status)}
           className="text-field"
           inputClassName={css(
-            "text-ellipsis text-field-input",
-            status?.type === "Deleted" && "status-deleted",
-            status?.type === "Error" && "input-validation-error"
+            'text-ellipsis text-field-input',
+            status?.type === 'Deleted' && 'status-deleted',
+            status?.type === 'Error' && 'input-validation-error',
           )}
-          disabled={status?.type === "Deleted"}
+          disabled={status?.type === 'Deleted'}
           containerClassName="text-field-container"
           width={TextFieldWidth.auto}
           style={TextFieldStyle.inline}
@@ -61,16 +61,16 @@ export function renderTextFieldCell(
 }
 
 export type Status =
-  | { type: "Untracked" | "Modified" | "Deleted" }
+  | { type: 'Untracked' | 'Modified' | 'Deleted' }
   | {
-      type: "Error";
+      type: 'Error';
       message: string;
     };
-const StatusColor: Record<Status["type"], string> = {
-  Untracked: "var(--status-success-foreground)",
-  Modified: "var(--status-warning-foreground)",
-  Deleted: "var(--status-error-foreground)",
-  Error: "var(--status-error-foreground)",
+const StatusColor: Record<Status['type'], string> = {
+  Untracked: 'var(--status-success-foreground)',
+  Modified: 'var(--status-warning-foreground)',
+  Deleted: 'var(--status-error-foreground)',
+  Error: 'var(--status-error-foreground)',
 };
 
 const renderStatus = (status?: Status): IIconProps | undefined => {
@@ -78,7 +78,7 @@ const renderStatus = (status?: Status): IIconProps | undefined => {
     return undefined;
   }
 
-  if (status.type !== "Error") {
+  if (status.type !== 'Error') {
     return {
       render: (className) => (
         <Tooltip text={status.type}>
@@ -96,15 +96,15 @@ const renderStatus = (status?: Status): IIconProps | undefined => {
   }
 
   return {
-    iconName: "Error",
+    iconName: 'Error',
     style: { color: StatusColor[status.type] },
     tooltipProps: { text: status.message },
   };
 };
 
-export const StatusTypes: Record<Status["type"], Status> = {
-  Untracked: { type: "Untracked" },
-  Modified: { type: "Modified" },
-  Deleted: { type: "Deleted" },
-  Error: { type: "Error", message: "Unknown error" },
+export const StatusTypes: Record<Status['type'], Status> = {
+  Untracked: { type: 'Untracked' },
+  Modified: { type: 'Modified' },
+  Deleted: { type: 'Deleted' },
+  Error: { type: 'Error', message: 'Unknown error' },
 };

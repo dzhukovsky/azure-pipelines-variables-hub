@@ -1,6 +1,6 @@
-import { useVariableGroups } from "@/hooks/query/variableGroups";
-import { VariablesMatrix } from "../VariablesMatrix";
-import { IFilter } from "azure-devops-ui/Utilities/Filter";
+import type { IFilter } from 'azure-devops-ui/Utilities/Filter';
+import { useVariableGroups } from '@/hooks/query/variableGroups';
+import { VariablesMatrix } from '../VariablesMatrix';
 
 export type MatrixTabProps = {
   filter: IFilter;

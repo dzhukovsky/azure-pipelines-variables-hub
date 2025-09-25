@@ -1,19 +1,23 @@
-import { Card } from "azure-devops-ui/Card";
-import { VariableGroup } from "azure-devops-extension-api/TaskAgent";
+import { KeyRegular } from '@fluentui/react-icons/fonts';
+import type { VariableGroup } from 'azure-devops-extension-api/TaskAgent';
+import { Button } from 'azure-devops-ui/Button';
+import { Card } from 'azure-devops-ui/Card';
 import {
-  IObservableValue,
-  IReadonlyObservableArray,
+  type IObservableValue,
+  type IReadonlyObservableArray,
   ObservableArray,
   ObservableValue,
-} from "azure-devops-ui/Core/Observable";
-import { renderTextFieldCell, Status, StatusTypes } from "./TextFieldTableCell";
-import { ITableColumn, Table, TableCell } from "azure-devops-ui/Table";
-import { SortFunc, useSorting } from "../hooks/sorting";
-import { useFiltering } from "../hooks/filtering";
-import { useCallback, useMemo } from "react";
-import { IFilter } from "azure-devops-ui/Utilities/Filter";
-import { KeyRegular } from "@fluentui/react-icons/fonts";
-import { Button } from "azure-devops-ui/Button";
+} from 'azure-devops-ui/Core/Observable';
+import { type ITableColumn, Table, TableCell } from 'azure-devops-ui/Table';
+import type { IFilter } from 'azure-devops-ui/Utilities/Filter';
+import { useCallback, useMemo } from 'react';
+import { useFiltering } from '../hooks/filtering';
+import { type SortFunc, useSorting } from '../hooks/sorting';
+import {
+  renderTextFieldCell,
+  type Status,
+  StatusTypes,
+} from './TextFieldTableCell';
 
 interface IVariablesMatrixProps {
   variableGroups: VariableGroup[];
@@ -43,7 +47,7 @@ const filterFunc = (item: IVariableItem, text: string) => {
     includeItem =
       item.name.value?.toLocaleLowerCase().includes(text) ||
       Object.entries(item.values).some(([, value]) =>
-        value.value.value?.toLocaleLowerCase().includes(text)
+        value.value.value?.toLocaleLowerCase().includes(text),
       );
   }
 
@@ -52,23 +56,24 @@ const filterFunc = (item: IVariableItem, text: string) => {
 
 const useColumns = (
   variableGroups: VariableGroup[],
-  variables: IReadonlyObservableArray<IVariableItem>
+  variables: IReadonlyObservableArray<IVariableItem>,
 ) => {
   const columns = useMemo(() => {
     const renderNameColumn = (
       _rowIndex: number,
       columnIndex: number,
       tableColumn: ITableColumn<IVariableItem>,
-      tableItem: IVariableItem
+      tableItem: IVariableItem,
     ) => {
       const isSecret = Object.values(tableItem.values).some((v) => v.isSecret);
 
       return (
         <TableCell
-          key={"col-" + columnIndex}
+          key={`col-${columnIndex}`}
           columnIndex={columnIndex}
           tableColumn={tableColumn}
-          children={renderTextFieldCell(
+        >
+          {renderTextFieldCell(
             tableItem.name,
             tableItem.status,
             {
@@ -76,15 +81,15 @@ const useColumns = (
                 ? (className) => (
                     <KeyRegular
                       className={className}
-                      style={{ paddingLeft: "6px" }}
+                      style={{ paddingLeft: '6px' }}
                     />
                   )
                 : undefined,
-              iconName: isSecret ? undefined : "Variable",
+              iconName: isSecret ? undefined : 'Variable',
             },
             {
               readOnly: isSecret,
-              placeholder: "Name (required)",
+              placeholder: 'Name (required)',
               required: true,
             },
             (newName) => {
@@ -92,9 +97,9 @@ const useColumns = (
                 validateRequiredName(newName) ??
                 validateNameUniqueness(newName, variables.value) ??
                 getStatus(newName, tableItem.originalName);
-            }
+            },
           )}
-        />
+        </TableCell>
       );
     };
 
@@ -102,29 +107,30 @@ const useColumns = (
       _rowIndex: number,
       columnIndex: number,
       tableColumn: ITableColumn<IVariableItem>,
-      tableItem: IVariableItem
+      tableItem: IVariableItem,
     ) => {
       const id = +tableColumn.id;
       const variable = tableItem.values[id];
 
       return (
         <TableCell
-          key={"col-" + columnIndex}
+          key={`col-${columnIndex}`}
           columnIndex={columnIndex}
           tableColumn={tableColumn}
-          children={renderTextFieldCell(
+        >
+          {renderTextFieldCell(
             variable.value,
             variable.status,
             undefined,
-            { inputType: variable.isSecret ? "password" : "text" },
+            { inputType: variable.isSecret ? 'password' : 'text' },
             (newValue) => {
               variable.status.value = getStatus(
                 newValue,
-                variable.originalValue
+                variable.originalValue,
               );
-            }
+            },
           )}
-        />
+        </TableCell>
       );
     };
 
@@ -134,13 +140,13 @@ const useColumns = (
 
     const columns: ITableColumn<IVariableItem>[] = [
       {
-        id: "name",
-        name: "Name",
+        id: 'name',
+        name: 'Name',
         onSize,
         renderCell: renderNameColumn,
         sortProps: {
-          ariaLabelAscending: "Sorted A to Z",
-          ariaLabelDescending: "Sorted Z to A",
+          ariaLabelAscending: 'Sorted A to Z',
+          ariaLabelDescending: 'Sorted Z to A',
         },
         width: new ObservableValue(-20),
       },
@@ -150,8 +156,8 @@ const useColumns = (
         onSize,
         renderCell: renderValueColumn,
         sortProps: {
-          ariaLabelAscending: "Sorted A to Z",
-          ariaLabelDescending: "Sorted Z to A",
+          ariaLabelAscending: 'Sorted A to Z',
+          ariaLabelDescending: 'Sorted Z to A',
         },
         width: new ObservableValue(-15),
       })),
@@ -162,15 +168,15 @@ const useColumns = (
 
   const sortFunctions = useMemo<SortFunc<IVariableItem>[]>(
     () => [
-      (a, b) => (a.name.value ?? "").localeCompare(b.name.value ?? ""),
+      (a, b) => (a.name.value ?? '').localeCompare(b.name.value ?? ''),
       ...variableGroups.map<SortFunc<IVariableItem>>(
         (vg) => (a, b) =>
-          (a.values[vg.id]?.value.value ?? "").localeCompare(
-            b.values[vg.id]?.value.value ?? ""
-          )
+          (a.values[vg.id]?.value.value ?? '').localeCompare(
+            b.values[vg.id]?.value.value ?? '',
+          ),
       ),
     ],
-    [variableGroups]
+    [variableGroups],
   );
 
   return { columns, sortFunctions };
@@ -190,7 +196,7 @@ const getStatus = (newValue: string, originalValue?: string) => {
 
 const validateRequiredName = (variableName: string): Status | undefined => {
   if (!variableName?.trim()) {
-    return { type: "Error", message: "Name is required" };
+    return { type: 'Error', message: 'Name is required' };
   }
 
   return undefined;
@@ -198,15 +204,15 @@ const validateRequiredName = (variableName: string): Status | undefined => {
 
 const validateNameUniqueness = (
   variableName: string,
-  variables: IVariableItem[]
+  variables: IVariableItem[],
 ): Status | undefined => {
   variableName = variableName?.trim().toLocaleLowerCase();
   const count = variables.filter(
-    (v) => v.name.value?.trim().toLocaleLowerCase() === variableName
+    (v) => v.name.value?.trim().toLocaleLowerCase() === variableName,
   ).length;
 
   if (count > 1) {
-    return { type: "Error", message: "Names must be unique" };
+    return { type: 'Error', message: 'Names must be unique' };
   }
 
   return undefined;
@@ -216,7 +222,7 @@ const useVariables = (variableGroups: VariableGroup[]) => {
   const variables = useMemo(() => {
     const variableNames = [
       ...new Set<string>(
-        variableGroups.flatMap((vg) => Object.keys(vg.variables))
+        variableGroups.flatMap((vg) => Object.keys(vg.variables)),
       ),
     ];
 
@@ -224,8 +230,8 @@ const useVariables = (variableGroups: VariableGroup[]) => {
       variableGroups.flatMap((vg) =>
         Object.entries(vg.variables)
           .filter(([, v]) => v.isSecret)
-          .map(([k]) => k)
-      )
+          .map(([k]) => k),
+      ),
     );
 
     const values: Record<string, ValuesObject> = {};
@@ -238,12 +244,12 @@ const useVariables = (variableGroups: VariableGroup[]) => {
         const isSecret = secretVariables.has(name);
         const variable = vg.variables[name];
         values[name][vg.id] = (variable && {
-          value: new ObservableValue(variable.value ?? ""),
-          originalValue: variable.value ?? "",
+          value: new ObservableValue(variable.value ?? ''),
+          originalValue: variable.value ?? '',
           status: new ObservableValue(undefined),
           isSecret,
         }) || {
-          value: new ObservableValue(""),
+          value: new ObservableValue(''),
           status: new ObservableValue(StatusTypes.Untracked),
           isSecret,
         };
@@ -265,14 +271,14 @@ const useVariables = (variableGroups: VariableGroup[]) => {
     const values: ValuesObject = {};
     variableGroups.forEach((vg) => {
       values[vg.id] = {
-        value: new ObservableValue(""),
+        value: new ObservableValue(''),
         status: new ObservableValue(StatusTypes.Untracked),
         isSecret: false,
       };
     });
 
     const newVariable: IVariableItem = {
-      name: new ObservableValue(""),
+      name: new ObservableValue(''),
       status: new ObservableValue(StatusTypes.Untracked),
       readonly: false,
       values,
@@ -294,13 +300,13 @@ export const VariablesMatrix = ({
   const { sortedItems, sortingBehavior } = useSorting(
     columns,
     variables,
-    sortFunctions
+    sortFunctions,
   );
 
   const { filteredItems, hasItems } = useFiltering(
     sortedItems,
     filter,
-    filterFunc
+    filterFunc,
   );
 
   return (
@@ -321,12 +327,12 @@ export const VariablesMatrix = ({
         </Card>
         <div className="flex-row margin-vertical-16">
           <Button
-            iconProps={{ iconName: "Add" }}
+            iconProps={{ iconName: 'Add' }}
             text="Add new variable"
             onClick={addNewVariable}
           />
         </div>
       </div>
-    )) || <>No items found</>
+    )) || <span>No items found</span>
   );
 };

@@ -1,14 +1,14 @@
+import { Card } from 'azure-devops-ui/Card';
 import {
-  IReadonlyObservableArray,
+  type IReadonlyObservableArray,
   ObservableValue,
-} from "azure-devops-ui/Core/Observable";
-import { Card } from "azure-devops-ui/Card";
-import { ITableColumn, Table, TableCell } from "azure-devops-ui/Table";
-import { useMemo } from "react";
-import { renderTextFieldCell, Status } from "./TextFieldTableCell";
-import { IFilter } from "azure-devops-ui/Utilities/Filter";
-import { FilterFunc, useFiltering } from "../hooks/filtering";
-import { SortFunc, useSorting } from "../hooks/sorting";
+} from 'azure-devops-ui/Core/Observable';
+import { type ITableColumn, Table, TableCell } from 'azure-devops-ui/Table';
+import type { IFilter } from 'azure-devops-ui/Utilities/Filter';
+import { useMemo } from 'react';
+import { type FilterFunc, useFiltering } from '../hooks/filtering';
+import { type SortFunc, useSorting } from '../hooks/sorting';
+import { renderTextFieldCell, type Status } from './TextFieldTableCell';
 
 export interface IVariableItem {
   name: ObservableValue<string>;
@@ -31,15 +31,16 @@ const useColumns = () => {
       _rowIndex: number,
       columnIndex: number,
       tableColumn: ITableColumn<IVariableItem>,
-      tableItem: IVariableItem
+      tableItem: IVariableItem,
     ) => {
       return (
         <TableCell
-          key={"col-" + columnIndex}
+          key={`col-${columnIndex}`}
           columnIndex={columnIndex}
           tableColumn={tableColumn}
-          children={renderTextFieldCell(tableItem.name)}
-        />
+        >
+          {renderTextFieldCell(tableItem.name)}
+        </TableCell>
       );
     };
 
@@ -47,15 +48,16 @@ const useColumns = () => {
       _rowIndex: number,
       columnIndex: number,
       tableColumn: ITableColumn<IVariableItem>,
-      tableItem: IVariableItem
+      tableItem: IVariableItem,
     ) => {
       return (
         <TableCell
-          key={"col-" + columnIndex}
+          key={`col-${columnIndex}`}
           columnIndex={columnIndex}
           tableColumn={tableColumn}
-          children={renderTextFieldCell(tableItem.value, tableItem.status)}
-        />
+        >
+          {renderTextFieldCell(tableItem.value, tableItem.status)}
+        </TableCell>
       );
     };
 
@@ -65,24 +67,24 @@ const useColumns = () => {
 
     const columns = [
       {
-        id: "name",
-        name: "Name",
+        id: 'name',
+        name: 'Name',
         onSize,
         renderCell: renderNameColumn,
         sortProps: {
-          ariaLabelAscending: "Sorted A to Z",
-          ariaLabelDescending: "Sorted Z to A",
+          ariaLabelAscending: 'Sorted A to Z',
+          ariaLabelDescending: 'Sorted Z to A',
         },
         width: new ObservableValue(-5),
       },
       {
-        id: "value",
-        name: "Value",
+        id: 'value',
+        name: 'Value',
         width: new ObservableValue(-15),
         renderCell: renderValueColumn,
         sortProps: {
-          ariaLabelAscending: "Sorted A to Z",
-          ariaLabelDescending: "Sorted Z to A",
+          ariaLabelAscending: 'Sorted A to Z',
+          ariaLabelDescending: 'Sorted Z to A',
         },
       },
     ];
@@ -104,13 +106,13 @@ export const VariablesTable = ({
   const { sortedItems, sortingBehavior } = useSorting(
     columns,
     variables,
-    sortFunctions
+    sortFunctions,
   );
 
   const { filteredItems, hasItems } = useFiltering(
     sortedItems,
     filter,
-    filterFunc
+    filterFunc,
   );
 
   return (
@@ -128,6 +130,6 @@ export const VariablesTable = ({
           showLines={false}
         />
       </Card>
-    )) || <>No items found</>
+    )) || <span>No items found</span>
   );
 };

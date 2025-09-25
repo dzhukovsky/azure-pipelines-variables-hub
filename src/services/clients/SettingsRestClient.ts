@@ -1,5 +1,4 @@
-import { IVssRestClientOptions } from "azure-devops-extension-api/Common/Context";
-import { RestClientBase } from "azure-devops-extension-api/Common/RestClientBase";
+import { RestClientBase } from 'azure-devops-extension-api/Common/RestClientBase';
 
 export interface Entries<T> {
   count: number;
@@ -7,16 +6,13 @@ export interface Entries<T> {
 }
 
 export class SettingsRestClient extends RestClientBase {
-  constructor(options: IVssRestClientOptions) {
-    super(options);
-  }
   public async getEntries<T>(
     project: string,
-    continuationToken?: string
+    continuationToken?: string,
   ): Promise<Entries<T>> {
     return this.beginRequest<Entries<T>>({
-      apiVersion: "7.0",
-      routeTemplate: "{project}/_apis/Settings/Entries/globalme",
+      apiVersion: '7.0',
+      routeTemplate: '{project}/_apis/Settings/Entries/globalme',
       routeValues: {
         project: project,
       },

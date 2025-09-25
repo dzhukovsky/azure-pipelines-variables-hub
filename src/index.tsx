@@ -1,10 +1,10 @@
-import "azure-devops-ui/Core/override.css";
+import 'azure-devops-ui/Core/override.css';
 
-import ReactDOM from "react-dom";
-import { VariablesHub } from "./VariablesHub.tsx";
-import * as SDK from "azure-devops-extension-sdk";
-import { SurfaceBackground, SurfaceContext } from "azure-devops-ui/Surface";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as SDK from 'azure-devops-extension-sdk';
+import { SurfaceBackground, SurfaceContext } from 'azure-devops-ui/Surface';
+import ReactDOM from 'react-dom';
+import { VariablesHub } from './VariablesHub.tsx';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,5 +23,5 @@ ReactDOM.render(
       <VariablesHub />
     </QueryClientProvider>
   </SurfaceContext.Provider>,
-  document.getElementById("root")
+  document.getElementById('root'),
 );

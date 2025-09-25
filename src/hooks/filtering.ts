@@ -1,23 +1,26 @@
 import {
-  IReadonlyObservableArray,
+  type IReadonlyObservableArray,
   useObservableArray,
-} from "azure-devops-ui/Core/Observable";
-import { FILTER_CHANGE_EVENT, IFilter } from "azure-devops-ui/Utilities/Filter";
-import { useEffect, useState } from "react";
+} from 'azure-devops-ui/Core/Observable';
+import {
+  FILTER_CHANGE_EVENT,
+  type IFilter,
+} from 'azure-devops-ui/Utilities/Filter';
+import { useEffect, useState } from 'react';
 
 export type FilterFunc<T> = (item: T, text: string) => boolean;
 
 function filterItems<T>(
   items: T[],
   filter: IFilter,
-  filterFunc: FilterFunc<T>
+  filterFunc: FilterFunc<T>,
 ) {
   if (!filter.hasChangesToReset()) {
     return [...items];
   }
 
   const filterText =
-    filter.getFilterItemValue<string>("keyword")?.toLocaleLowerCase() ?? "";
+    filter.getFilterItemValue<string>('keyword')?.toLocaleLowerCase() ?? '';
 
   return items.filter((item) => filterFunc(item, filterText));
 }
@@ -25,13 +28,13 @@ function filterItems<T>(
 export function useFiltering<T>(
   items: IReadonlyObservableArray<T>,
   filter: IFilter,
-  filterFunc: FilterFunc<T>
+  filterFunc: FilterFunc<T>,
 ) {
   const [filteredItems] = useObservableArray<T>(
-    filterItems(items.value, filter, filterFunc)
+    filterItems(items.value, filter, filterFunc),
   );
   const [hasItems, setHasItems] = useState<boolean>(
-    filteredItems.value.length > 0
+    filteredItems.value.length > 0,
   );
 
   useEffect(() => {

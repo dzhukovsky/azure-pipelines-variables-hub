@@ -1,17 +1,17 @@
-import { LibraryItem, VariablesTree } from "../VariablesTree";
-import {
+import type {
   SecureFile,
   VariableGroup,
-} from "azure-devops-extension-api/TaskAgent";
-import { useMemo } from "react";
+} from 'azure-devops-extension-api/TaskAgent';
+import { ObservableValue } from 'azure-devops-ui/Core/Observable';
 import {
-  ITreeItem,
+  type ITreeItem,
   TreeItemProvider,
-} from "azure-devops-ui/Utilities/TreeItemProvider";
-import { ObservableValue } from "azure-devops-ui/Core/Observable";
-import { StatusTypes } from "../TextFieldTableCell";
-import { useVariableGroups } from "@/hooks/query/variableGroups";
-import { useSecureFiles } from "@/hooks/query/secureFiles";
+} from 'azure-devops-ui/Utilities/TreeItemProvider';
+import { useMemo } from 'react';
+import { useSecureFiles } from '@/hooks/query/secureFiles';
+import { useVariableGroups } from '@/hooks/query/variableGroups';
+import { StatusTypes } from '../TextFieldTableCell';
+import { type LibraryItem, VariablesTree } from '../VariablesTree';
 
 export const HomeTab = () => {
   const groups = useVariableGroups();
@@ -22,7 +22,7 @@ export const HomeTab = () => {
 
   const itemProvider = useMemo(
     () => getItemProvider(groups.data, files.data),
-    [groups.data, files.data]
+    [groups.data, files.data],
   );
 
   if (isLoading) {
@@ -38,13 +38,13 @@ export const HomeTab = () => {
 
 const getItemProvider = (
   variableGroups: VariableGroup[],
-  secureFiles: SecureFile[]
+  secureFiles: SecureFile[],
 ) => {
   const rootItems = [
     ...variableGroups.map<ITreeItem<LibraryItem>>((group) => ({
       data: {
         name: group.name,
-        type: "group",
+        type: 'group',
       },
       childItems: Object.entries(group.variables).map<ITreeItem<LibraryItem>>(
         ([name, variable]) => ({
@@ -53,16 +53,16 @@ const getItemProvider = (
             value: new ObservableValue(variable.value),
             isSecret: variable.isSecret,
             status: new ObservableValue(StatusTypes.Untracked),
-            type: "groupVariable",
+            type: 'groupVariable',
           },
-        })
+        }),
       ),
       expanded: false,
     })),
     ...secureFiles.map<ITreeItem<LibraryItem>>((file) => ({
       data: {
         name: file.name,
-        type: "file",
+        type: 'file',
       },
     })),
   ];

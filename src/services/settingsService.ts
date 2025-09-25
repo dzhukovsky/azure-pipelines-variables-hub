@@ -1,6 +1,6 @@
-import * as SDK from "azure-devops-extension-sdk";
-import { getClient } from "azure-devops-extension-api";
-import { SettingsRestClient } from "./clients/SettingsRestClient";
+import { getClient } from 'azure-devops-extension-api';
+import * as SDK from 'azure-devops-extension-sdk';
+import { SettingsRestClient } from './clients/SettingsRestClient';
 
 export const getCurrentTheme = async () => {
   await SDK.ready();
@@ -8,8 +8,8 @@ export const getCurrentTheme = async () => {
   const project = SDK.getWebContext().project;
   const environmentsClient = getClient(SettingsRestClient);
   const entries = await environmentsClient.getEntries<{
-    "WebPlatform/Theme": string;
+    'WebPlatform/Theme': string;
   }>(project.name);
 
-  return entries.value["WebPlatform/Theme"];
+  return entries.value['WebPlatform/Theme'];
 };

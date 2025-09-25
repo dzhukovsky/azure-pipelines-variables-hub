@@ -1,11 +1,11 @@
-import * as SDK from "azure-devops-extension-sdk";
-import { getClient } from "azure-devops-extension-api";
-import { TaskAgentRestClient } from "azure-devops-extension-api/TaskAgent";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from '@tanstack/react-query';
+import { getClient } from 'azure-devops-extension-api';
+import { TaskAgentRestClient } from 'azure-devops-extension-api/TaskAgent';
+import * as SDK from 'azure-devops-extension-sdk';
 
 export const useVariableGroups = () =>
   useQuery({
-    queryKey: ["variable-groups"],
+    queryKey: ['variable-groups'],
     queryFn: async () => {
       await SDK.ready();
 
