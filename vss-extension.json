@@ -1,9 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/vss-extension",
-  "id": "variables-hub",
-  "name": "Variables Hub",
+  "id": "pipelines-library",
+  "name": "Pipelines Library",
   "manifestVersion": 1,
-  "version": "1.0.33",
+  "version": "1.0.1",
   "publisher": "dzhukovsky",
   "public": false,
   "author": "Dmitry Zhukovsky",
@@ -30,17 +30,17 @@
   },
   "repository": {
     "type": "git",
-    "uri": "https://github.com/dzhukovsky/azure-pipelines-variables-hub"
+    "uri": "https://github.com/dzhukovsky/azure-pipelines-library"
   },
   "contributions": [
     {
-      "id": "variables-hub",
+      "id": "pipelines-library.hub",
       "type": "ms.vss-web.hub",
       "targets": ["ms.vss-build-web.build-release-hub-group"],
       "properties": {
-        "name": "Variables",
+        "name": "Library (New)",
         "uri": "index.html",
-        "iconName": "Variable"
+        "iconName": "Library"
       }
     }
   ],

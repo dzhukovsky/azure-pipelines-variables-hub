@@ -1,16 +1,16 @@
 {
-  "id": "variables-hub-dev",
-  "name": "Variables Hub (Dev)",
+  "id": "pipelines-library-dev",
+  "name": "Pipelines Library (Dev)",
   "public": false,
   "contributions": [
     {
-      "id": "variables-hub-dev",
+      "id": "pipelines-library.hub.dev",
       "type": "ms.vss-web.hub",
       "targets": ["ms.vss-build-web.build-release-hub-group"],
       "properties": {
-        "name": "Variables (Dev)",
+        "name": "Library (Dev)",
         "uri": "http://localhost:3000/index.html",
-        "iconName": "Variable"
+        "iconName": "Library"
       }
     }
   ]

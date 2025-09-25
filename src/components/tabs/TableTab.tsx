@@ -1,14 +1,14 @@
-import { VariableGroup } from "azure-devops-extension-api/TaskAgent";
-import { useMemo } from "react";
+import type { VariableGroup } from 'azure-devops-extension-api/TaskAgent';
 import {
   ObservableArray,
   ObservableValue,
-} from "azure-devops-ui/Core/Observable";
-import { StatusTypes } from "../TextFieldTableCell";
-import { IVariableItem, VariablesTable } from "../VariablesTable";
-import { IFilter } from "azure-devops-ui/Utilities/Filter";
-import { SortFunc } from "src/hooks/sorting";
-import { useVariableGroups } from "@/hooks/query/variableGroups";
+} from 'azure-devops-ui/Core/Observable';
+import type { IFilter } from 'azure-devops-ui/Utilities/Filter';
+import { useMemo } from 'react';
+import { useVariableGroups } from '@/hooks/query/variableGroups';
+import type { SortFunc } from '@/hooks/sorting';
+import { StatusTypes } from '../TextFieldTableCell';
+import { type IVariableItem, VariablesTable } from '../VariablesTable';
 
 const filterFunc = (item: IVariableItem, text: string) => {
   let includeItem = true;
@@ -23,8 +23,8 @@ const filterFunc = (item: IVariableItem, text: string) => {
 };
 
 const sortFunctions: SortFunc<IVariableItem>[] = [
-  (a, b) => (a.name.value ?? "").localeCompare(b.name.value ?? ""),
-  (a, b) => (a.value.value ?? "").localeCompare(b.value.value ?? ""),
+  (a, b) => (a.name.value ?? '').localeCompare(b.name.value ?? ''),
+  (a, b) => (a.value.value ?? '').localeCompare(b.value.value ?? ''),
 ];
 
 export type TableTabProps = {
@@ -64,7 +64,7 @@ const getVariables = (variableGroups: VariableGroup[]) => {
         status: new ObservableValue(StatusTypes.Untracked),
         groupName: vg.name,
         isSecret: value.isSecret,
-      }))
+      })),
     );
 
   return new ObservableArray<IVariableItem>(items);
