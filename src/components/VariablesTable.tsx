@@ -1,3 +1,4 @@
+import { Button } from 'azure-devops-ui/Button';
 import { Card } from 'azure-devops-ui/Card';
 import {
   type IReadonlyObservableArray,
@@ -8,7 +9,14 @@ import type { IFilter } from 'azure-devops-ui/Utilities/Filter';
 import { useMemo } from 'react';
 import { type FilterFunc, useFiltering } from '../hooks/filtering';
 import { type SortFunc, useSorting } from '../hooks/sorting';
-import { renderTextFieldCell, type Status } from './TextFieldTableCell';
+import { createActionColumn } from './shared/Table/createActionColumn';
+import { useRowRenderer } from './shared/Table/useRowRenderer';
+import {
+  renderStatus,
+  renderTextFieldCell,
+  type Status,
+  StatusTypes,
+} from './TextFieldTableCell';
 
 export interface IVariableItem {
   name: ObservableValue<string>;
@@ -27,66 +35,49 @@ export interface IVariablesTableProps {
 
 const useColumns = () => {
   const columns = useMemo<ITableColumn<IVariableItem>[]>(() => {
-    const renderNameColumn = (
-      _rowIndex: number,
-      columnIndex: number,
-      tableColumn: ITableColumn<IVariableItem>,
-      tableItem: IVariableItem,
-    ) => {
-      return (
-        <TableCell
-          key={`col-${columnIndex}`}
-          columnIndex={columnIndex}
-          tableColumn={tableColumn}
-        >
-          {renderTextFieldCell(tableItem.name)}
-        </TableCell>
-      );
-    };
-
-    const renderValueColumn = (
-      _rowIndex: number,
-      columnIndex: number,
-      tableColumn: ITableColumn<IVariableItem>,
-      tableItem: IVariableItem,
-    ) => {
-      return (
-        <TableCell
-          key={`col-${columnIndex}`}
-          columnIndex={columnIndex}
-          tableColumn={tableColumn}
-        >
-          {renderTextFieldCell(tableItem.value, tableItem.status)}
-        </TableCell>
-      );
-    };
-
     const onSize = (_event: MouseEvent, index: number, width: number) => {
       (columns[index].width as ObservableValue<number>).value = width;
     };
 
-    const columns = [
-      {
+    const columns: ITableColumn<IVariableItem>[] = [
+      createActionColumn<IVariableItem>({
         id: 'name',
         name: 'Name',
         onSize,
-        renderCell: renderNameColumn,
+        renderCell: (options) => renderTextFieldCell(options.item.name),
+        renderActions: (options) =>
+          (options.hasMouse || options.hasFocus) && (
+            <Button subtle iconProps={{ iconName: 'Delete' }} />
+          ),
         sortProps: {
           ariaLabelAscending: 'Sorted A to Z',
           ariaLabelDescending: 'Sorted Z to A',
         },
         width: new ObservableValue(-5),
-      },
-      {
+      }),
+      createActionColumn<IVariableItem>({
         id: 'value',
         name: 'Value',
         width: new ObservableValue(-15),
-        renderCell: renderValueColumn,
+        renderCell: ({ item }) => renderTextFieldCell(item.value),
+        renderActions: (options) =>
+          ((options.hasMouse || options.hasFocus) && (
+            <Button
+              subtle
+              iconProps={{
+                iconName: options.item.isSecret ? 'Lock' : 'Unlock',
+              }}
+              onClick={() => {
+                options.item.isSecret = !options.item.isSecret;
+              }}
+            />
+          )) ||
+          renderStatus(options.item.status),
         sortProps: {
           ariaLabelAscending: 'Sorted A to Z',
           ariaLabelDescending: 'Sorted Z to A',
         },
-      },
+      }),
     ];
 
     return columns;
@@ -115,6 +106,8 @@ export const VariablesTable = ({
     filterFunc,
   );
 
+  const renderRow = useRowRenderer(columns);
+
   return (
     (hasItems && (
       <Card
@@ -125,6 +118,7 @@ export const VariablesTable = ({
           className="text-field-table-wrap focusable-text-field-rows"
           behaviors={[sortingBehavior]}
           columns={columns}
+          renderRow={renderRow}
           selectRowOnClick={false}
           itemProvider={filteredItems}
           showLines={false}

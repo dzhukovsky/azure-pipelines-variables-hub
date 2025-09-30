@@ -34,7 +34,7 @@ export type TableTabProps = {
 export const TableTab = ({ filter }: TableTabProps) => {
   const { data, isLoading, error } = useVariableGroups();
 
-  const variables = useMemo(() => getVariables(data), [data]);
+  const variables = useMemo(() => getVariables(data ?? []), [data]);
 
   if (isLoading) {
     return <div>Loading...</div>;

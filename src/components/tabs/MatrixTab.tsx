@@ -17,5 +17,5 @@ export const MatrixTab = ({ filter }: MatrixTabProps) => {
     return <div>Error: {(error as Error).message}</div>;
   }
 
-  return <VariablesMatrix variableGroups={data} filter={filter} />;
+  return <VariablesMatrix variableGroups={data ?? []} filter={filter} />;
 };

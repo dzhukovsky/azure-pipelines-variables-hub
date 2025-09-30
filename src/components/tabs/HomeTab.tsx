@@ -21,7 +21,7 @@ export const HomeTab = () => {
   const error = groups.error || files.error;
 
   const itemProvider = useMemo(
-    () => getItemProvider(groups.data, files.data),
+    () => getItemProvider(groups.data ?? [], files.data ?? []),
     [groups.data, files.data],
   );
 

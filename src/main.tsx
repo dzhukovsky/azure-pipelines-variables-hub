@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as SDK from 'azure-devops-extension-sdk';
 import { SurfaceBackground, SurfaceContext } from 'azure-devops-ui/Surface';
 import ReactDOM from 'react-dom';
-import { VariablesHub } from './VariablesHub.tsx';
+import { HomePage } from './pages/home';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,7 +20,7 @@ SDK.init();
 ReactDOM.render(
   <SurfaceContext.Provider value={{ background: SurfaceBackground.neutral }}>
     <QueryClientProvider client={queryClient}>
-      <VariablesHub />
+      <HomePage />
     </QueryClientProvider>
   </SurfaceContext.Provider>,
   document.getElementById('root'),

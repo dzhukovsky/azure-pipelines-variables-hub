@@ -15,5 +15,4 @@ export const useSecureFiles = () =>
 
       return secureFiles;
     },
-    initialData: [],
   });

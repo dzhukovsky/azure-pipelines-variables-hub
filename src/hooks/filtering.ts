@@ -54,3 +54,9 @@ export function useFiltering<T>(
 
   return { filteredItems, hasItems };
 }
+
+export const useFilterSubscription = (filter: IFilter, onChange: () => void) =>
+  useEffect(() => {
+    filter.subscribe(onChange, FILTER_CHANGE_EVENT);
+    return () => filter.unsubscribe(onChange, FILTER_CHANGE_EVENT);
+  }, [filter, onChange]);

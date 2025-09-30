@@ -3,14 +3,18 @@ import {
   KeyRegular,
   LibraryFilled,
 } from '@fluentui/react-icons/fonts';
+import { Button } from 'azure-devops-ui/Button';
 import { Card } from 'azure-devops-ui/Card';
 import {
   type IObservableValue,
+  type IReadonlyObservableValue,
   ObservableLike,
   ObservableValue,
+  useObservable,
 } from 'azure-devops-ui/Core/Observable';
+import { FocusOrMouseWithin } from 'azure-devops-ui/FocusOrMouseWithin';
 import { renderListCell } from 'azure-devops-ui/List';
-import { TableCell } from 'azure-devops-ui/Table';
+import { ColumnMore, TableCell, TableHeaderCell } from 'azure-devops-ui/Table';
 import {
   ExpandableTreeCell,
   type ITreeColumn,
@@ -19,9 +23,20 @@ import {
   type TreeRowRenderer,
 } from 'azure-devops-ui/TreeEx';
 import { css } from 'azure-devops-ui/Util';
-import type { ITreeItemProvider } from 'azure-devops-ui/Utilities/TreeItemProvider';
-import { useCallback, useMemo } from 'react';
-import { renderTextFieldCell, type Status } from './TextFieldTableCell';
+import type {
+  ITreeItemEx,
+  ITreeItemProvider,
+} from 'azure-devops-ui/Utilities/TreeItemProvider';
+import { useCallback, useMemo, useState } from 'react';
+import { createActionColumn } from './shared/Table/createActionColumn';
+import { useRowRenderer } from './shared/Table/useRowRenderer';
+import { createExpandableActionColumn } from './shared/Tree/createExpandableActionColumn';
+import {
+  renderStatus,
+  renderTextFieldCell,
+  type Status,
+  StatusTypes,
+} from './TextFieldTableCell';
 
 export type VariablesTreeProps = {
   itemProvider: ITreeItemProvider<LibraryItem>;
@@ -65,93 +80,117 @@ const useColumns = () => {
     };
 
     const columns: ITreeColumn<LibraryItem>[] = [
-      {
+      createExpandableActionColumn<LibraryItem>({
         id: 'name',
         name: 'Name',
+        contentClassName: 'padding-vertical-0 padding-right-0',
         onSize,
-        renderCell: (_rowIndex, columnIndex, treeColumn, treeItem) => {
-          const underlyingItem = treeItem.underlyingItem;
-          const data = ObservableLike.getValue(underlyingItem.data);
-
+        renderCell: (item) => {
           return (
-            <ExpandableTreeCell
-              key={`col-${columnIndex}`}
-              contentClassName={css(
-                data.type === 'groupVariable' && 'padding-0',
-              )}
-              className={treeColumn.className}
-              columnIndex={columnIndex}
-              treeItem={treeItem}
-              treeColumn={treeColumn}
-            >
-              {(data.type === 'group' &&
-                renderListCell({
-                  text: data.name,
-                  iconProps: {
-                    render: (className) => (
-                      <LibraryFilled
-                        className={className}
-                        style={{
-                          color: 'var(--icon-folder-color, #dcb67a)',
-                        }}
-                      />
-                    ),
-                  },
-                })) ||
-                (data.type === 'groupVariable' &&
-                  renderTextFieldCell(
-                    data.name,
-                    data.status,
-                    {
-                      render: data.isSecret
-                        ? (className) => (
-                            <KeyRegular
-                              className={className}
-                              style={{ paddingLeft: '2px', marginLeft: '0' }}
-                            />
-                          )
-                        : undefined,
-                      iconName: data.isSecret ? undefined : 'Variable',
-                      style: { paddingLeft: '0', marginLeft: '0' },
-                    },
-                    { readOnly: data.isSecret },
-                  )) ||
-                (data.type === 'file' &&
-                  renderListCell({
-                    text: data.name,
-                    iconProps: {
-                      render: (className) => (
-                        <DocumentKeyRegular className={className} />
-                      ),
-                    },
-                  })) ||
-                undefined}
-            </ExpandableTreeCell>
+            (item.type === 'group' &&
+              renderListCell({
+                text: item.name,
+                textClassName: 'padding-vertical-8',
+                iconProps: {
+                  render: (className) => (
+                    <LibraryFilled
+                      className={className}
+                      style={{
+                        color: 'var(--icon-folder-color, #dcb67a)',
+                      }}
+                    />
+                  ),
+                },
+              })) ||
+            (item.type === 'groupVariable' &&
+              renderTextFieldCell(
+                item.name,
+                undefined,
+                {
+                  render: item.isSecret
+                    ? (className) => (
+                        <KeyRegular
+                          className={className}
+                          style={{ paddingLeft: '2px', marginLeft: '0' }}
+                        />
+                      )
+                    : undefined,
+                  iconName: item.isSecret ? undefined : 'Variable',
+                  style: { paddingLeft: '0', marginLeft: '0' },
+                },
+                { readOnly: item.isSecret },
+              )) ||
+            (item.type === 'file' &&
+              renderListCell({
+                text: item.name,
+                textClassName: 'padding-vertical-8',
+                iconProps: {
+                  render: (className) => (
+                    <DocumentKeyRegular className={className} />
+                  ),
+                },
+              })) ||
+            undefined
           );
         },
+        renderActions: (_rowIndex, item, hasFocus, hasMouse) =>
+          (item.type === 'group' && hasMouse && (
+            <Button
+              subtle
+              iconProps={{ iconName: 'Add' }}
+              onClick={(e) => {
+                console.log('Click');
+                e.preventDefault();
+              }}
+            />
+          )) ||
+          (((item.type === 'groupVariable' && hasMouse) || hasFocus) && (
+            <Button
+              subtle
+              iconProps={{ iconName: 'Delete' }}
+              onClick={(e) => {
+                console.log('Click');
+                e.preventDefault();
+              }}
+            />
+          )),
         width: new ObservableValue(-5),
-      },
-      {
+      }),
+      createActionColumn<ITreeItemEx<LibraryItem>>({
         id: 'value',
         name: 'Value',
         width: new ObservableValue(-15),
-        renderCell: (_rowIndex, columnIndex, treeColumn, treeItem) => {
-          const underlyingItem = treeItem.underlyingItem;
+        renderCell: ({ item }) => {
+          const underlyingItem = item.underlyingItem;
           const data = ObservableLike.getValue(underlyingItem.data);
 
           return (
-            (data.type === 'groupVariable' && (
-              <TableCell
-                key={`col-${columnIndex}`}
-                columnIndex={columnIndex}
-                tableColumn={treeColumn}
-              >
-                {renderTextFieldCell(data.value, data.status)}
-              </TableCell>
-            )) || <td key={`col-${columnIndex}`} />
+            (data.type === 'groupVariable' &&
+              renderTextFieldCell(data.value)) || (
+              <div className="flex-row flex-grow" />
+            )
           );
         },
-      },
+        renderActions: ({ item, hasFocus, hasMouse }) =>
+          ((hasMouse || hasFocus) && (
+            <Button
+              subtle
+              onClick={(e) => {
+                console.log('Click');
+                e.preventDefault();
+              }}
+              iconProps={{
+                iconName:
+                  (item.underlyingItem.data.type === 'groupVariable' &&
+                    (item.isSecret ? 'Lock' : 'Unlock')) ||
+                  (item.underlyingItem.data.type === 'group' &&
+                    'MoreVertical') ||
+                  (item.underlyingItem.data.type === 'file' && 'MoreVertical'),
+              }}
+            />
+          )) ||
+          renderStatus(item.underlyingItem.data.status),
+      }),
     ];
 
     return columns;
@@ -172,7 +211,9 @@ const useColumns = () => {
 };
 
 export const VariablesTree = ({ itemProvider }: VariablesTreeProps) => {
-  const { columns, renderRow } = useColumns();
+  const { columns } = useColumns();
+
+  const renderRow = useRowRenderer(columns);
 
   return (
     <Card

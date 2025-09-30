@@ -15,5 +15,4 @@ export const useVariableGroups = () =>
 
       return variableGroups;
     },
-    initialData: [],
   });

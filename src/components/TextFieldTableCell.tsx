@@ -1,5 +1,5 @@
 import type { IObservableValue } from 'azure-devops-ui/Core/Observable';
-import type { IIconProps } from 'azure-devops-ui/Icon';
+import { Icon, type IIconProps } from 'azure-devops-ui/Icon';
 import { Observer } from 'azure-devops-ui/Observer';
 import {
   type ITextFieldProps,
@@ -38,7 +38,7 @@ export function renderTextFieldCell(
             renderContent: () => value.value,
           }}
           prefixIconProps={iconProps}
-          suffixIconProps={renderStatus(status)}
+          suffixIconProps={renderStatusInternal(status)}
           className="text-field"
           inputClassName={css(
             'text-ellipsis text-field-input',
@@ -73,7 +73,9 @@ const StatusColor: Record<Status['type'], string> = {
   Error: 'var(--status-error-foreground)',
 };
 
-const renderStatus = (status?: Status): IIconProps | undefined => {
+export const renderStatusInternal = (
+  status?: Status,
+): IIconProps | undefined => {
   if (!status) {
     return undefined;
   }
@@ -100,6 +102,25 @@ const renderStatus = (status?: Status): IIconProps | undefined => {
     style: { color: StatusColor[status.type] },
     tooltipProps: { text: status.message },
   };
+};
+
+export const renderStatus = (status?: IObservableValue<Status | undefined>) => {
+  return (
+    <Observer status={status}>
+      {({ status }) =>
+        !!status && (
+          <Tooltip text={status.type}>
+            <span
+              className="text-field-status padding-vertical-8 padding-horizontal-8 margin-horizontal-4"
+              style={{ color: StatusColor[status.type] }}
+            >
+              {status.type.charAt(0)}
+            </span>
+          </Tooltip>
+        )
+      }
+    </Observer>
+  );
 };
 
 export const StatusTypes: Record<Status['type'], Status> = {

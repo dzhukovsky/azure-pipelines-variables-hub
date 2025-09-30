@@ -1,6 +1,10 @@
-import './VariablesHub.scss';
+import './home.scss';
 
-import { useObservable } from 'azure-devops-ui/Core/Observable';
+import {} from 'azure-devops-extension-sdk';
+import {
+  useObservable,
+  useSubscription,
+} from 'azure-devops-ui/Core/Observable';
 import { Header, TitleSize } from 'azure-devops-ui/Header';
 import type { IHeaderCommandBarItem } from 'azure-devops-ui/HeaderCommandBar';
 import { Observer } from 'azure-devops-ui/Observer';
@@ -10,10 +14,12 @@ import { Surface, SurfaceBackground } from 'azure-devops-ui/Surface';
 import { Tab, TabBar } from 'azure-devops-ui/Tabs';
 import { InlineKeywordFilterBarItem } from 'azure-devops-ui/TextFilterBarItem';
 import { Filter } from 'azure-devops-ui/Utilities/Filter';
-import { useCallback, useState } from 'react';
-import { HomeTab } from './components/tabs/HomeTab';
-import { MatrixTab } from './components/tabs/MatrixTab';
-import { TableTab } from './components/tabs/TableTab';
+import { useCallback, useEffect, useState } from 'react';
+import { HomeTab } from '@/components/tabs/HomeTab';
+import { MatrixTab } from '@/components/tabs/MatrixTab';
+import { TableTab } from '@/components/tabs/TableTab';
+import { useFilterSubscription } from '@/hooks/filtering';
+import { useNavigationService } from '@/hooks/query/navigation';
 
 const headerCommands: IHeaderCommandBarItem[] = [
   {
@@ -67,22 +73,34 @@ const headerCommands: IHeaderCommandBarItem[] = [
   },
 ];
 
-export const VariablesHub = () => {
-  const [filter] = useState(new Filter());
-  const [selectedTabId] = useObservable('home');
+export const HomePage = () => {
+  const { queryParams, isLoading, setQueryParams } = useNavigationService({
+    tab: 'home',
+    filter: '',
+  });
 
-  const onSelectedTabChanged = useCallback(
-    (newTabId: string) => {
-      selectedTabId.value = newTabId;
-    },
-    [selectedTabId],
+  const [filter] = useState(
+    new Filter({ defaultState: { keyword: { value: queryParams.filter } } }),
   );
 
-  const renderTabBarCommands = useCallback(() => {
-    return (
+  if (filter.getFilterItemValue('keyword') !== queryParams.filter) {
+    filter.setFilterItemState('keyword', { value: queryParams.filter });
+  }
+
+  useFilterSubscription(filter, () => {
+    setQueryParams({ filter: filter.getFilterItemValue('keyword') }, false);
+  });
+
+  const renderTabBarCommands = useCallback(
+    () => (
       <InlineKeywordFilterBarItem filter={filter} filterItemKey="keyword" />
-    );
-  }, [filter]);
+    ),
+    [filter],
+  );
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Surface background={SurfaceBackground.neutral}>
@@ -93,8 +111,8 @@ export const VariablesHub = () => {
           commandBarItems={headerCommands}
         />
         <TabBar
-          selectedTabId={selectedTabId}
-          onSelectedTabChanged={onSelectedTabChanged}
+          selectedTabId={queryParams.tab}
+          onSelectedTabChanged={(tab) => setQueryParams({ tab })}
           renderAdditionalContent={renderTabBarCommands}
           disableSticky={false}
         >
@@ -103,13 +121,9 @@ export const VariablesHub = () => {
           <Tab id={'matrix'} name="Matrix" />
         </TabBar>
         <div className="page-content page-content-top">
-          <Observer selectedTabId={selectedTabId}>
-            {({ selectedTabId }) =>
-              (selectedTabId === 'home' && <HomeTab />) ||
-              (selectedTabId === 'table' && <TableTab filter={filter} />) ||
-              (selectedTabId === 'matrix' && <MatrixTab filter={filter} />)
-            }
-          </Observer>
+          {(queryParams.tab === 'home' && <HomeTab />) ||
+            (queryParams.tab === 'table' && <TableTab filter={filter} />) ||
+            (queryParams.tab === 'matrix' && <MatrixTab filter={filter} />)}
         </div>
       </Page>
     </Surface>
